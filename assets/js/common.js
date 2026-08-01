@@ -295,11 +295,25 @@ async function loadLazyImage(ph, onImage) {
     img.src = url;
     img.alt = alt;
     img.loading = 'lazy';
+    img.dataset.abs = abs;   // 供灯箱/图墙定位全局图片序列
     if (onImage) onImage(img);
     ph.replaceWith(img);
   } catch {
     ph.remove();
   }
+}
+
+/* 构建图片全局序列：按时间倒序的条目，提取每条的图片引用（含相对路径解析） */
+function buildImageSequence(list) {
+  const seq = [];
+  for (const e of list) {
+    const re = /!\[[^\]]*\]\(([^)]+)\)/g;
+    let m;
+    while ((m = re.exec(e.body || ''))) {
+      seq.push({ abs: DiaryAPI.resolveImagePath(e.path, m[1]), entry: e.name });
+    }
+  }
+  return seq;
 }
 
 /* ---------- 本地时间格式化 ---------- */

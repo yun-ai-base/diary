@@ -17,6 +17,8 @@ const state = {
   newImages: [],
   expandedIds: new Set(), // 已手动展开的文字卡片 id，render 后恢复
   snapshot: null,         // 打开编辑器时的内容快照，用于未保存检测
+  imageSequence: [],      // 当前过滤状态下全部图片序列（跨卡片灯箱/图墙）
+  lbIndex: 0,             // 灯箱当前图在序列中的位置
 };
 
 const $ = (sel, el = document) => el.querySelector(sel);
@@ -155,6 +157,7 @@ function render() {
       ${cards.join('')}
     </div>`;
   }).join('');
+  state.imageSequence = buildImageSequence(list);   // 跟随过滤条件
   autoUncollapseShortNotes($('#timeline'));
   lazyLoadImages($('#timeline'));
 }
@@ -426,40 +429,40 @@ function showActions(entry) {
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
-/* ---------------- 图片灯箱（多图左右滑动） ---------------- */
-let lightboxImages = [];
-let lightboxIndex = 0;
-
+/* ---------------- 图片灯箱（跨卡片全局序列，左右滑动） ---------------- */
 function openLightbox(img) {
-  const card = img.closest('.entry-card');
-  // 收集当前卡片已加载的图片，定位当前点击的那张
-  lightboxImages = [...card.querySelectorAll('.md-img')].map(i => i.src);
-  lightboxIndex = Math.max(0, lightboxImages.indexOf(img.src));
-  // 后台补加载同卡片里尚未进入视口的图（懒加载占位），并入灯箱列表
-  card.querySelectorAll('.md-img-rel').forEach(ph => {
-    loadLazyImage(ph, newImg => {
-      if ($('#lightbox').classList.contains('hidden')) return;
-      lightboxImages.push(newImg.src);
-      updateLightbox();
-    });
-  });
-  updateLightbox();
+  const abs = img.dataset.abs || img.src;
+  let idx = state.imageSequence.findIndex(it => it.abs === abs);
+  if (idx < 0) {   // 序列未命中（容错）：单独成序
+    state.imageSequence = [{ abs, entry: '' }];
+    idx = 0;
+  }
+  state.lbIndex = idx;
   $('#lightbox').classList.remove('hidden');
+  updateLightbox();
 }
 
 function updateLightbox() {
-  const n = lightboxImages.length;
-  const idx = Math.min(lightboxIndex, n - 1);
-  $('#lightboxImg').src = n ? lightboxImages[idx] : '';
+  const n = state.imageSequence.length;
+  const idx = state.lbIndex;
+  const item = state.imageSequence[idx];
+  $('#lightboxImg').removeAttribute('src');
+  if (item) {
+    // 按需加载当前图（走缓存），先清空再显示避免闪旧图
+    DiaryAPI.getImageURL(item.abs).then(url => {
+      if (state.lbIndex !== idx || $('#lightbox').classList.contains('hidden')) return;
+      $('#lightboxImg').src = url;
+    }).catch(() => {});
+  }
   $('#lightboxCount').textContent = n > 1 ? `${idx + 1} / ${n}` : '';
   $('#lightboxPrev').style.display = n > 1 ? '' : 'none';
   $('#lightboxNext').style.display = n > 1 ? '' : 'none';
 }
 
 function moveLightbox(dir) {
-  const n = lightboxImages.length;
+  const n = state.imageSequence.length;
   if (n < 2) return;
-  lightboxIndex = (lightboxIndex + dir + n) % n;   // 首尾循环
+  state.lbIndex = (state.lbIndex + dir + n) % n;   // 首尾循环
   updateLightbox();
 }
 
