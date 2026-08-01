@@ -72,7 +72,23 @@ function setLoading(on) {
 }
 
 /* ---------------- 数据 ---------------- */
+/* 加载中骨架卡片 */
+function renderSkeleton() {
+  const empty = $('#emptyState');
+  empty.classList.add('hidden');
+  const t = $('#timeline');
+  const cards = Array.from({ length: 4 }, (_, i) =>
+    `<div class="skeleton-card" style="animation-delay:${i * 80}ms">
+      <div class="sk sk-head"></div>
+      <div class="sk sk-line w90"></div>
+      <div class="sk sk-line w100"></div>
+      <div class="sk sk-line w60"></div>
+    </div>`).join('');
+  t.innerHTML = cards;
+}
+
 async function loadData() {
+  renderSkeleton();
   const files = await DiaryAPI.listAll();
   const mds = files.filter(f => f.path.endsWith('.md') && /\/\d{4}-\d{2}-\d{2}/.test(f.path));
   state.mdPaths = new Set(mds.map(f => f.path));

@@ -230,6 +230,26 @@ code { font-family: Consolas, monospace; font-size: 0.88em; background: rgba(255
   padding: 14px 14px calc(120px + var(--safe-b));
   display: flex; flex-direction: column; gap: 14px;
 }
+/* 加载骨架 */
+.skeleton-card {
+  border-radius: var(--radius);
+  padding: 20px;
+  background: var(--glass-strong);
+  border: 1px solid var(--border);
+}
+.sk {
+  background: linear-gradient(100deg, rgba(255,255,255,0.06) 40%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0.06) 60%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+.sk-head { width: 80px; height: 20px; margin-bottom: 16px; }
+.sk-line { height: 13px; margin-bottom: 10px; }
+.w100 { width: 100%; } .w90 { width: 90%; } .w60 { width: 60%; }
+@keyframes sk-shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
 .entry-card {
   border-radius: var(--radius);
   padding: 20px;

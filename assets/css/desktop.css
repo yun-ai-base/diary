@@ -263,6 +263,32 @@ code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.9em; bac
 @media (max-width: 1100px) { .timeline { column-count: 2; } }
 @media (max-width: 720px)  { .timeline { column-count: 1; padding: 24px 14px 110px; } }
 
+/* 加载骨架 */
+.skeleton-card {
+  display: inline-block;
+  width: 100%; vertical-align: top;
+  break-inside: avoid;
+  border-radius: var(--radius);
+  padding: 18px 20px;
+  margin-bottom: 22px;
+  background: var(--glass-strong);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+}
+.sk {
+  background: linear-gradient(100deg, rgba(255,255,255,0.06) 40%, rgba(255,255,255,0.14) 50%, rgba(255,255,255,0.06) 60%);
+  background-size: 200% 100%;
+  animation: sk-shimmer 1.4s ease-in-out infinite;
+  border-radius: 6px;
+}
+.sk-head { width: 80px; height: 20px; margin-bottom: 16px; }
+.sk-line { height: 13px; margin-bottom: 10px; }
+.w100 { width: 100%; } .w90 { width: 90%; } .w60 { width: 60%; }
+@keyframes sk-shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
 /* ---- 条目卡片（小卡片瀑布流） ---- */
 .entry-card {
   position: relative;
