@@ -230,6 +230,31 @@ code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.9em; bac
 }
 .search:focus { width: 230px; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(165,180,252,0.15); }
 .search::placeholder { color: var(--ink-faint); }
+.search-wrap2 { position: relative; }
+.search-suggest {
+  position: absolute; top: calc(100% + 8px); left: 0;
+  min-width: 220px; max-width: 280px; max-height: 260px; overflow-y: auto;
+  background: rgba(30, 27, 75, 0.95);
+  -webkit-backdrop-filter: blur(18px);
+  backdrop-filter: blur(18px);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 6px;
+  box-shadow: var(--shadow);
+  z-index: 30;
+  display: flex; flex-wrap: wrap; gap: 6px;
+  animation: pop-in 0.18s ease-out both;
+}
+.suggest-item {
+  background: rgba(255,255,255,0.07);
+  border: 1px solid var(--border);
+  color: var(--ink-dim);
+  border-radius: 999px;
+  padding: 5px 12px;
+  font-size: 12.5px; cursor: pointer;
+  transition: all 0.18s;
+}
+.suggest-item:hover { color: var(--accent); border-color: var(--accent); background: rgba(165,180,252,0.14); }
 .month-select {
   background: rgba(255,255,255,0.06);
   border: 1px solid var(--border);

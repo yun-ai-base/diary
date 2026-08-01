@@ -201,6 +201,19 @@ function renderCard(entry, delay) {
   </article>`;
 }
 
+/* 搜索标签联想：输入前缀匹配已有标签 */
+function allTags() { return [...new Set(state.entries.flatMap(e => e.tags))].sort(); }
+function updateSuggestions(q) {
+  const box = $('#searchSuggest');
+  const t = (q || '').trim().toLowerCase();
+  const tags = allTags().filter(tg => tg.toLowerCase().includes(t));
+  if (!t || !tags.length) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+  box.innerHTML = tags.slice(0, 8).map(tg =>
+    `<button class="suggest-item" data-tag="${escapeHtml(tg)}">#${escapeHtml(tg)}</button>`).join('');
+  box.classList.remove('hidden');
+}
+function closeSuggestions() { $('#searchSuggest').classList.add('hidden'); $('#searchSuggest').innerHTML = ''; }
+
 /* 折叠卡片渲染后：内容未超出折叠高度（短笔记）则去掉折叠态和按钮 */
 function autoUncollapseShortNotes(container) {
   container.querySelectorAll('.entry-body-collapsed').forEach(body => {
@@ -531,12 +544,25 @@ function bindEvents() {
     render();
   });
 
-  // 搜索
+  // 搜索 + 标签联想
   let searchTimer = null;
   $('#searchInput').addEventListener('input', e => {
     clearTimeout(searchTimer);
     searchTimer = setTimeout(() => { state.search = e.target.value; render(); }, 200);
+    updateSuggestions(e.target.value);
   });
+  $('#searchInput').addEventListener('focus', e => updateSuggestions(e.target.value));
+  $('#searchSuggest').addEventListener('click', e => {
+    const item = e.target.closest('.suggest-item');
+    if (!item) return;
+    state.filterTag = item.dataset.tag;
+    state.search = ''; $('#searchInput').value = '';
+    closeSuggestions();
+    // 清掉搜索命中，切到该标签筛选；同时取消全部分类选中态
+    $$('.type-tab', $('#typeTabs')).forEach(b => b.classList.toggle('active', b.dataset.type === 'all' && !state.filterTag));
+    render();
+  });
+  document.addEventListener('click', e => { if (!e.target.closest('.search-wrap2')) closeSuggestions(); });
 
   // 月份跳转
   $('#monthSelect').addEventListener('change', e => jumpToMonth(e.target.value));
