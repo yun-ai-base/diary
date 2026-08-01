@@ -494,6 +494,16 @@ code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.9em; bac
 }
 .editor-title { font-family: var(--serif); font-size: 19px; letter-spacing: 2px; }
 .editor-close { position: static; }
+.preview-btn {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  color: var(--ink-dim);
+  border-radius: 999px;
+  padding: 5px 14px;
+  font-size: 12.5px; cursor: pointer;
+  transition: all 0.2s;
+}
+.preview-btn:hover { color: var(--ink); border-color: var(--accent); background: rgba(165,180,252,0.1); }
 
 /* 类型选择 */
 .type-picker { display: flex; gap: 8px; padding: 18px 24px 0; }
@@ -527,6 +537,29 @@ code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.9em; bac
 }
 .editor-body:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(165,180,252,0.15); }
 .editor-body::placeholder { color: var(--ink-faint); }
+.editor-preview {
+  margin: 18px 24px 0;
+  min-height: 150px;
+  max-height: 320px;
+  overflow-y: auto;
+  background: rgba(255,255,255,0.05);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 16px;
+  color: var(--ink); font-size: 15px; line-height: 1.85;
+  word-break: break-word;
+}
+.editor-preview p { margin-bottom: 10px; }
+.editor-preview p:last-child { margin-bottom: 0; }
+.editor-preview h1 { font-size: 22px; } .editor-preview h2 { font-size: 19px; }
+.editor-preview h3 { font-size: 17px; }
+.editor-preview h1, .editor-preview h2, .editor-preview h3, .editor-preview h4, .editor-preview h5, .editor-preview h6 { margin: 14px 0 8px; line-height: 1.4; }
+.editor-preview blockquote { border-left: 3px solid var(--accent); padding: 4px 16px; margin: 12px 0; color: var(--ink-dim); font-style: italic; background: rgba(255,255,255,0.03); border-radius: 0 8px 8px 0; }
+.editor-preview code { background: rgba(255,255,255,0.13); padding: 1px 6px; border-radius: 5px; font-size: 0.88em; }
+.editor-preview pre { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 10px; padding: 12px 14px; font-size: 13px; overflow-x: auto; margin: 12px 0; }
+.editor-preview ul, .editor-preview ol { padding-left: 22px; margin: 8px 0; }
+.editor-preview a { color: var(--accent); }
+.editor-preview img { max-width: 100%; border-radius: 10px; margin: 8px 0; }
 
 .meta-row { display: flex; align-items: center; gap: 10px; padding: 14px 24px 0; }
 .meta-label { color: var(--ink-dim); font-size: 13px; white-space: nowrap; }

@@ -86,10 +86,12 @@
   <div class="editor glass">
     <div class="editor-head">
       <span class="editor-title" id="editorTitle">新灵感</span>
+      <button class="preview-btn" id="previewBtn" title="切换预览">👁 预览</button>
       <button class="icon-btn editor-close" id="editorClose" title="关闭">✕</button>
     </div>
     <div class="type-picker" id="typePicker"></div>
     <textarea id="editorBody" class="editor-body" placeholder="写点什么…&#10;支持 markdown：# 标题、**粗体**、*斜体*、&gt; 引用、```代码```"></textarea>
+    <div id="editorPreview" class="editor-preview hidden"></div>
     <div class="meta-row">
       <div class="chips" id="tagChips"></div>
       <input id="tagInput" class="tag-input" placeholder="标签 · 回车添加" autocomplete="off">

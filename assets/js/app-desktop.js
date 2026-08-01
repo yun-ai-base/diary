@@ -223,8 +223,29 @@ function openEditor(entry) {
   renderImgStrip();
   $('#sourceRow').classList.toggle('hidden', state.currentType !== 'quote');
   state.snapshot = { body: $('#editorBody').value.trim(), source: $('#sourceInput').value.trim(), tags: [...state.tags], imgCount: state.newImages.length };
+  resetPreview();
   $('#editor').classList.remove('hidden');
   setTimeout(() => $('#editorBody').focus(), 60);
+}
+
+/* 预览切换：编辑/预览互斥显示 */
+function resetPreview() {
+  $('#editorBody').classList.remove('hidden');
+  $('#editorPreview').classList.add('hidden');
+  $('#previewBtn').textContent = '👁 预览';
+}
+function togglePreview() {
+  const body = $('#editorBody');
+  const preview = $('#editorPreview');
+  const btn = $('#previewBtn');
+  if (preview.classList.contains('hidden')) {
+    preview.innerHTML = renderMarkdown(body.value.trim() || '*（还没有内容）*', '') || '*（还没有内容）*';
+    preview.classList.remove('hidden');
+    body.classList.add('hidden');
+    btn.textContent = '✎ 编辑';
+  } else {
+    resetPreview();
+  }
 }
 
 /* 是否有未保存改动（对比打开时的快照） */
@@ -514,6 +535,9 @@ function bindEvents() {
     const opt = e.target.closest('.type-opt');
     if (opt) setType(opt.dataset.type);
   });
+
+  // 预览切换
+  $('#previewBtn').addEventListener('click', togglePreview);
 
   // 标签输入
   $('#tagInput').addEventListener('keydown', e => {
