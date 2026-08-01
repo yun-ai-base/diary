@@ -48,7 +48,7 @@ function buildFrontmatter(meta, body) {
 }
 
 /* ---------- 极简 markdown 渲染（不引外部库） ---------- */
-function renderMarkdown(src) {
+function renderMarkdown(src, mdPath = '') {
   if (!src) return '';
   let html = escapeHtml(src);
   // 代码块
@@ -56,7 +56,7 @@ function renderMarkdown(src) {
   // 图片（不转义相对路径中的引号在第一步已处理，这里恢复相对引用写法）
   html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (m, alt, url) => {
     if (/^(https?:|data:)/.test(url)) return `<img src="${url}" alt="${alt}" class="md-img" loading="lazy">`;
-    return `<span class="md-img-rel" data-src="${url}" data-alt="${alt}"></span>`;
+    return `<span class="md-img-rel" data-src="${url}" data-alt="${alt}" data-md-path="${escapeHtml(mdPath)}"></span>`;
   });
   // 行内代码
   html = html.replace(/`([^`]+)`/g, '<code class="md-code-inline">$1</code>');
@@ -244,6 +244,50 @@ function fileToBase64(blob) {
     r.onerror = () => reject(new Error('文件读取失败'));
     r.readAsDataURL(blob);
   });
+}
+
+/* ============================================================
+ * 图片懒加载：只加载进入可视区域的图片，数据增长也不拖慢首屏
+ * timeline 容器重建后，需重新调用本函数注册观察器
+ * ============================================================ */
+let _lazyObserver = null;
+function lazyLoadImages(container = document, { onImage } = {}) {
+  const phs = container.querySelectorAll('.md-img-rel');
+  if (!phs.length) return;
+  if (!('IntersectionObserver' in window)) {
+    // 旧浏览器不支持：直接全量加载
+    phs.forEach(ph => loadLazyImage(ph, onImage));
+    return;
+  }
+  if (!_lazyObserver) {
+    _lazyObserver = new IntersectionObserver((entries) => {
+      for (const ent of entries) {
+        if (ent.isIntersecting) {
+          _lazyObserver.unobserve(ent.target);
+          loadLazyImage(ent.target, onImage);
+        }
+      }
+    }, { rootMargin: '400px 0px', threshold: 0.01 }); // 提前 400px 预加载
+  }
+  phs.forEach(ph => _lazyObserver.observe(ph));
+}
+
+async function loadLazyImage(ph, onImage) {
+  const rel = ph.dataset.src;
+  const alt = ph.dataset.alt || '图';
+  try {
+    const abs = DiaryAPI.resolveImagePath(ph.dataset.mdPath, rel);
+    const url = await DiaryAPI.getImageURL(abs);
+    const img = document.createElement('img');
+    img.className = 'md-img';
+    img.src = url;
+    img.alt = alt;
+    img.loading = 'lazy';
+    if (onImage) onImage(img);
+    ph.replaceWith(img);
+  } catch {
+    ph.remove();
+  }
 }
 
 /* ---------- 本地时间格式化 ---------- */

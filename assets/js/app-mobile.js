@@ -101,9 +101,7 @@ function jumpToMonth(m) {
 }
 
 /* ---------------- 渲染 ---------------- */
-let renderVersion = 0;
 function render() {
-  const myVersion = ++renderVersion;
   const { filterType, filterTag, search } = state;
   const q = search.toLowerCase().trim();
   const list = state.entries.filter(e => {
@@ -139,7 +137,7 @@ function render() {
       ${cards.join('')}
     </div>`;
   }).join('');
-  hydrateAllImages(myVersion);
+  lazyLoadImages($('#timeline'));
 }
 
 function formatDayLabel(dk) {
@@ -163,34 +161,10 @@ function renderCard(entry, delay) {
       <span class="entry-time">${timeStr}</span>
       <button class="entry-menu-btn" title="操作">⋯</button>
     </div>
-    <div class="entry-body">${renderMarkdown(entry.body || '')}</div>
+    <div class="entry-body">${renderMarkdown(entry.body || '', entry.path)}</div>
     ${source}
     ${tags ? `<div class="entry-tags">${tags}</div>` : ''}
   </article>`;
-}
-
-async function hydrateAllImages(version) {
-  try {
-    const cards = $$('.entry-card');
-    await Promise.all(cards.map(async card => {
-      const entry = state.entries.find(e => e.name === card.dataset.id);
-      if (!entry) return;
-      const phs = $$('.md-img-rel', card);
-      await Promise.all(phs.map(async ph => {
-        try {
-          const abs = DiaryAPI.resolveImagePath(entry.path, ph.dataset.src);
-          const url = await DiaryAPI.getImageURL(abs);
-          if (version !== renderVersion) return;
-          const img = document.createElement('img');
-          img.className = 'md-img';
-          img.src = url;
-          img.alt = ph.dataset.alt || '图';
-          img.loading = 'lazy';
-          ph.replaceWith(img);
-        } catch { if (version === renderVersion) ph.remove(); }
-      }));
-    }));
-  } catch { /* 图片加载失败不影响列表 */ }
 }
 
 /* ---------------- 编辑器 ---------------- */

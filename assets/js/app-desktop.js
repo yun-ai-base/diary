@@ -119,9 +119,7 @@ function jumpToMonth(m) {
 }
 
 /* ---------------- 渲染 ---------------- */
-let renderVersion = 0; // 递增标记：hydrateAllImages 只处理最新一次渲染的 DOM
 function render() {
-  const myVersion = ++renderVersion;
   const { filterType, filterTag, search } = state;
   const q = search.toLowerCase().trim();
 
@@ -145,7 +143,7 @@ function render() {
     timeline.innerHTML = list.map((e, i) => renderCard(e, i * 50)).join('');
   }
   updateStats();
-  hydrateAllImages(myVersion);
+  lazyLoadImages($('#timeline'));
 }
 
 function renderCard(entry, delay) {
@@ -155,7 +153,7 @@ function renderCard(entry, delay) {
   ).join('');
   const source = entry.type === 'quote' && entry.source
     ? `<div class="entry-source">${escapeHtml(entry.source)}</div>` : '';
-  const bodyHtml = renderMarkdown(entry.body || '');
+  const bodyHtml = renderMarkdown(entry.body || '', entry.path);
   const time = (entry.name.match(/(\d{4})-(\d{2})-(\d{2})-(\d{6})\.md/) || []).slice(1, 5).join('');
   const timeStr = time ? `${time.slice(4, 6)}-${time.slice(6, 8)} ${time.slice(8, 10)}:${time.slice(10, 12)}` : '';
 
@@ -175,32 +173,6 @@ function renderCard(entry, delay) {
     ${source}
     ${tags ? `<div class="entry-tags">${tags}</div>` : ''}
   </article>`;
-}
-
-async function hydrateAllImages(version) {
-  try {
-    const cards = $$('.entry-card');
-    await Promise.all(cards.map(async card => {
-      const entry = state.entries.find(e => e.name === card.dataset.id);
-      if (!entry) return;
-      const phs = $$('.md-img-rel', card);
-      await Promise.all(phs.map(async ph => {
-        const rel = ph.dataset.src;
-        try {
-          const abs = DiaryAPI.resolveImagePath(entry.path, rel);
-          const url = await DiaryAPI.getImageURL(abs);
-          // 渲染版本已变化（用户又点了分类），不再替换旧 DOM
-          if (version !== renderVersion) return;
-          const img = document.createElement('img');
-          img.className = 'md-img';
-          img.src = url;
-          img.alt = ph.dataset.alt || '图';
-          img.loading = 'lazy';
-          ph.replaceWith(img);
-        } catch { if (version === renderVersion) ph.remove(); }
-      }));
-    }));
-  } catch { /* 图片加载失败不影响列表 */ }
 }
 
 function updateStats() {
