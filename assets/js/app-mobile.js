@@ -394,6 +394,7 @@ function bindEvents() {
     const btn = e.target.closest('.type-tab');
     if (!btn) return;
     state.filterType = btn.dataset.type;
+    state.filterTag = '';          // 切分类时清掉标签过滤，避免叠加残留
     $$('.type-tab', $('#typeTabs')).forEach(b => b.classList.toggle('active', b === btn));
     render();
   });
