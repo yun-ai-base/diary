@@ -251,29 +251,28 @@ code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.9em; bac
 }
 .icon-btn:hover { color: var(--ink); border-color: var(--border-hover); background: rgba(255,255,255,0.11); }
 
-/* ---- 时间线 ---- */
+/* ---- 时间线：瀑布流多列（CSS Columns） ---- */
 .timeline {
-  width: 100%; max-width: 640px;
+  width: 100%; max-width: 1300px;
   margin: 0 auto;
-  padding: 40px 20px 120px;
-  position: relative;
+  padding: 40px 24px 120px;
+  column-count: 3;
+  column-gap: 22px;
+  column-fill: balance;
 }
-/* 时间线细光丝 */
-.timeline::before {
-  content: "";
-  position: absolute;
-  left: 50%; top: 0; bottom: 0;
-  width: 1px;
-  transform: translateX(-50%);
-  background: linear-gradient(to bottom, transparent, rgba(165,180,252,0.28) 12%, rgba(165,180,252,0.28) 88%, transparent);
-}
+@media (max-width: 1100px) { .timeline { column-count: 2; } }
+@media (max-width: 720px)  { .timeline { column-count: 1; padding: 24px 14px 110px; } }
 
-/* ---- 条目卡片 ---- */
+/* ---- 条目卡片（小卡片瀑布流） ---- */
 .entry-card {
   position: relative;
+  display: inline-block;
+  width: 100%;
+  vertical-align: top;
+  break-inside: avoid;
   border-radius: var(--radius);
-  padding: 26px 28px 24px;
-  margin-bottom: 34px;
+  padding: 18px 20px 16px;
+  margin-bottom: 22px;
   background: var(--glass-strong);
   -webkit-backdrop-filter: blur(22px) saturate(150%);
   backdrop-filter: blur(22px) saturate(150%);
@@ -400,15 +399,12 @@ code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.9em; bac
 .tag:hover { color: var(--accent); border-color: var(--accent); background: rgba(165,180,252,0.12); }
 .tag.active { color: #1e1b4b; background: var(--accent); border-color: var(--accent); font-weight: 600; }
 
-/* 日期分组标题 */
-.day-group { display: none; }
+/* 日期分组标题（瀑布流下不再分组，改为卡片内显示时间） */
+.day-group { display: block; break-inside: avoid; }
 .day-group.visible { display: block; }
 .day-label {
-  display: flex; align-items: center; gap: 14px;
-  margin: 34px 0 18px;
-  color: var(--ink-dim); font-size: 13px; letter-spacing: 2px;
+  display: none;
 }
-.day-label::before, .day-label::after { content: ""; flex: 1; height: 1px; background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent); }
 
 /* 空状态 */
 .empty-state { text-align: center; padding: 90px 0 60px; }

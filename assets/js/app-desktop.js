@@ -142,31 +142,10 @@ function render() {
     empty.classList.remove('hidden');
   } else {
     empty.classList.add('hidden');
-    // 按天分组
-    const days = new Map();
-    for (const e of list) {
-      const dk = dayKeyOf(e.name);
-      if (!days.has(dk)) days.set(dk, []);
-      days.get(dk).push(e);
-    }
-    const dayKeys = [...days.keys()].sort().reverse();
-    timeline.innerHTML = dayKeys.map((dk, di) => {
-      const label = formatDayLabel(dk);
-      const cards = days.get(dk).map((e, i) => renderCard(e, i * 60 + di * 40));
-      return `<div class="day-group visible" data-day="${dk}">
-        <div class="day-label">${label}</div>
-        ${cards.join('')}
-      </div>`;
-    }).join('');
+    timeline.innerHTML = list.map((e, i) => renderCard(e, i * 50)).join('');
   }
   updateStats();
   hydrateAllImages(myVersion);
-}
-
-function formatDayLabel(dk) {
-  const [y, m, d] = dk.split('-').map(Number);
-  const wd = ['日', '一', '二', '三', '四', '五', '六'][new Date(y, m - 1, d).getDay()];
-  return `${y}年${m}月${d}日 · 周${wd}`;
 }
 
 function renderCard(entry, delay) {
@@ -177,8 +156,8 @@ function renderCard(entry, delay) {
   const source = entry.type === 'quote' && entry.source
     ? `<div class="entry-source">${escapeHtml(entry.source)}</div>` : '';
   const bodyHtml = renderMarkdown(entry.body || '');
-  const time = (entry.name.match(/-(\d{6})\.md/) || [])[1];
-  const timeStr = time ? `${time.slice(0, 2)}:${time.slice(2, 4)}` : '';
+  const time = (entry.name.match(/(\d{4})-(\d{2})-(\d{2})-(\d{6})\.md/) || []).slice(1, 5).join('');
+  const timeStr = time ? `${time.slice(4, 6)}-${time.slice(6, 8)} ${time.slice(8, 10)}:${time.slice(10, 12)}` : '';
 
   return `<article class="entry-card" data-id="${escapeHtml(entry.name)}" data-month="${monthKeyOf(entry.name)}" style="animation-delay:${Math.min(delay, 500)}ms">
     <div class="entry-head">
