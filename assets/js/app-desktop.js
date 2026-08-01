@@ -157,6 +157,12 @@ function renderCard(entry, delay) {
   const time = (entry.name.match(/(\d{4})-(\d{2})-(\d{2})-(\d{6})\.md/) || []).slice(1, 5).join('');
   const timeStr = time ? `${time.slice(4, 6)}-${time.slice(6, 8)} ${time.slice(8, 10)}:${time.slice(10, 12)}` : '';
 
+  // 纯文字笔记：默认收起（限高 + 展开按钮）；带图笔记保持完整
+  const hasImg = /!\[[^\]]*\]\([^)]+\)/.test(entry.body || '');
+  const bodyHtmlFinal = hasImg
+    ? `<div class="entry-body">${bodyHtml}</div>`
+    : `<div class="entry-body entry-body-collapsed">${bodyHtml}<button class="entry-toggle" data-toggle="expand">展开</button></div>`;
+
   return `<article class="entry-card" data-id="${escapeHtml(entry.name)}" data-month="${monthKeyOf(entry.name)}" style="animation-delay:${Math.min(delay, 500)}ms">
     <div class="entry-head">
       <span class="entry-type" style="color:${t.color}"><i>${t.icon}</i>${t.label}</span>
@@ -169,7 +175,7 @@ function renderCard(entry, delay) {
         </div>
       </div>
     </div>
-    <div class="entry-body">${bodyHtml}</div>
+    ${bodyHtmlFinal}
     ${source}
     ${tags ? `<div class="entry-tags">${tags}</div>` : ''}
   </article>`;
@@ -518,6 +524,16 @@ function bindEvents() {
       closeAllMenus();
       if (menuItem.dataset.act === 'edit') openEditor(entry);
       else if (menuItem.dataset.act === 'delete') deleteEntry(entry);
+      return;
+    }
+    // 文字笔记展开/收起
+    const toggle = e.target.closest('.entry-toggle');
+    if (toggle) {
+      const body = toggle.closest('.entry-body');
+      const expanding = toggle.dataset.toggle === 'expand';
+      body.classList.toggle('entry-body-collapsed', !expanding);
+      toggle.textContent = expanding ? '收起' : '展开';
+      toggle.dataset.toggle = expanding ? 'collapse' : 'expand';
       return;
     }
     const tag = e.target.closest('.tag');

@@ -349,6 +349,29 @@ code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.9em; bac
 
 /* 正文 */
 .entry-body { font-size: 15px; line-height: 1.85; color: var(--ink); word-break: break-word; }
+/* 文字笔记折叠：限高 + 渐变遮罩 + 展开按钮 */
+.entry-body-collapsed {
+  position: relative;
+  max-height: 8.2em;            /* 约 4 行 */
+  overflow: hidden;
+}
+.entry-body-collapsed::after {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: 0; height: 3em;
+  background: linear-gradient(to bottom, transparent, rgba(30, 27, 75, 0.92));
+  pointer-events: none;
+}
+.entry-toggle {
+  position: relative;
+  display: inline-block;
+  margin-top: 4px;
+  background: none; border: none;
+  color: var(--accent);
+  font-size: 13px; cursor: pointer;
+  padding: 0 4px;
+  font-weight: 600;
+}
+.entry-toggle:hover { text-decoration: underline; }
 .entry-body p { margin-bottom: 10px; }
 .entry-body p:last-child { margin-bottom: 0; }
 .entry-body h1, .entry-body h2, .entry-body h3, .entry-body h4, .entry-body h5, .entry-body h6 {
