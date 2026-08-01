@@ -305,6 +305,15 @@ function localTimeParts() {
   };
 }
 
+/* 计算该条目新图的起始编号：解析正文里已引用的 images/{stamp}-N.jpg 的最大 N，从 N+1 开始；无则从 1 */
+function nextImageIndex(body, stamp) {
+  let maxN = 0;
+  const re = new RegExp(`images/${stamp.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}-(\\d+)\\.jpg`, 'g');
+  let m;
+  while ((m = re.exec(body || ''))) maxN = Math.max(maxN, Number(m[1]));
+  return maxN + 1;
+}
+
 /* 由时间戳文件名 2026-08-01-143502 → 显示时间 */
 function fmtStamp(name) {
   const m = /(\d{4})-(\d{2})-(\d{2})-(\d{2})(\d{2})(\d{2})/.exec(name);

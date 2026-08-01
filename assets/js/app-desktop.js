@@ -99,7 +99,7 @@ function renderSkeleton() {
 }
 
 async function loadData() {
-  renderSkeleton();
+  if (!state.entries.length) renderSkeleton();   // 仅首次加载显示骨架，刷新时保留旧列表
   const files = await DiaryAPI.listAll();
   const mds = files.filter(f => f.path.endsWith('.md') && /\/\d{4}-\d{2}-\d{2}/.test(f.path));
   state.mdPaths = new Set(mds.map(f => f.path));
@@ -251,7 +251,7 @@ function openEditor(entry) {
   renderTagChips();
   renderImgStrip();
   $('#sourceRow').classList.toggle('hidden', state.currentType !== 'quote');
-  state.snapshot = { body: $('#editorBody').value.trim(), source: $('#sourceInput').value.trim(), tags: [...state.tags], imgCount: state.newImages.length };
+  state.snapshot = { body: $('#editorBody').value.trim(), source: $('#sourceInput').value.trim(), tags: [...state.tags], imgCount: state.newImages.length, type: state.currentType };
   resetPreview();
   $('#editor').classList.remove('hidden');
   setTimeout(() => $('#editorBody').focus(), 60);
@@ -268,7 +268,10 @@ function togglePreview() {
   const preview = $('#editorPreview');
   const btn = $('#previewBtn');
   if (preview.classList.contains('hidden')) {
-    preview.innerHTML = renderMarkdown(body.value.trim() || '*（还没有内容）*', '') || '*（还没有内容）*';
+    let html = renderMarkdown(body.value.trim() || '*（还没有内容）*', '') || '*（还没有内容）*';
+    preview.innerHTML = html;
+    // 预览里不加载相对路径图（尚未上传或未加载），移除占位避免空块
+    preview.querySelectorAll('.md-img-rel').forEach(ph => ph.remove());
     preview.classList.remove('hidden');
     body.classList.add('hidden');
     btn.textContent = '✎ 编辑';
@@ -283,6 +286,7 @@ function hasUnsavedChanges() {
   if (!snap) return false;
   if ($('#editorBody').value.trim() !== snap.body) return true;
   if ($('#sourceInput').value.trim() !== snap.source) return true;
+  if (state.currentType !== snap.type) return true;
   const tags = [...state.tags];
   if (tags.length !== snap.tags.length || tags.some(t => !snap.tags.includes(t))) return true;
   if (state.newImages.length !== snap.imgCount) return true;
@@ -376,13 +380,17 @@ async function saveEntry() {
     const mdDir = `data/${year}`;
     let finalBody = body;
 
-    // 上传新图片
+    // 上传新图片：编号从该条目已有图片后顺延，避免覆盖原图（记录路径，写完后失效缓存）
+    const writtenImages = [];
+    const imgStart = nextImageIndex(state.editing ? state.editing.body : '', stamp);
     for (let i = 0; i < state.newImages.length; i++) {
-      const rel = `images/${stamp}-${i + 1}.jpg`;
+      const rel = `images/${stamp}-${imgStart + i}.jpg`;
       const b64 = await fileToBase64(state.newImages[i].blob);
       await DiaryAPI.writeFile(`${mdDir}/${rel}`, b64);
       finalBody += `\n\n![图](${rel})`;
+      writtenImages.push(`${mdDir}/${rel}`);
     }
+    DiaryAPI.invalidateImages(writtenImages);
 
     const mdText = buildFrontmatter({ type, tags, source }, finalBody);
     await DiaryAPI.writeFile(`${mdDir}/${stamp}.md`, utf8ToBase64(mdText), sha);
@@ -438,9 +446,9 @@ async function deleteEntry(entry) {
     const files = await DiaryAPI.listAll();
     const dir = entry.path.replace(/\/[^/]+$/, '');
     const base = entry.name.replace(/\.md$/, '');
-    await Promise.all(files
-      .filter(f => f.path.startsWith(dir + '/images/') && f.path.includes(base + '-'))
-      .map(f => DiaryAPI.deleteFile(f.path, f.sha).catch(() => {})));
+    const doomed = files.filter(f => f.path.startsWith(dir + '/images/') && f.path.includes(base + '-'));
+    await Promise.all(doomed.map(f => DiaryAPI.deleteFile(f.path, f.sha).catch(() => {})));
+    DiaryAPI.invalidateImages(doomed.map(f => f.path));
     toast('已删除', true);
     await loadData();
   } catch (err) { toast('删除失败：' + err.message); }
@@ -661,11 +669,11 @@ function bindEvents() {
     // 文字笔记展开/收起：点击卡片任意位置切换（菜单/标签/图片除外）
     const cardEl = e.target.closest('.entry-card');
     const bodyEl = cardEl ? cardEl.querySelector('.entry-body') : null;
-    const isInteractEl = e.target.closest('.entry-menu') || e.target.closest('.tag') || e.target.closest('.md-img');
+    const isInteractEl = e.target.closest('.entry-menu') || e.target.closest('.tag') || e.target.closest('.md-img') || e.target.closest('a');
     if (cardEl && bodyEl && !isInteractEl && cardEl.querySelector('.entry-toggle')) {
       const expanding = bodyEl.classList.contains('entry-body-collapsed');
       bodyEl.classList.toggle('entry-body-collapsed', !expanding);
-      const tg = bodyEl.querySelector('.entry-toggle');
+      const tg = cardEl.querySelector('.entry-toggle');
       if (tg) { tg.textContent = expanding ? '收起' : '展开'; tg.dataset.toggle = expanding ? 'collapse' : 'expand'; }
       const id = cardEl.dataset.id;
       if (expanding) state.expandedIds.add(id);

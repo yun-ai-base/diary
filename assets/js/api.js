@@ -110,6 +110,15 @@ const DiaryAPI = {
     return url;
   },
 
+  /* 图片被覆盖后失效两级缓存，避免编辑替换后读到旧图 */
+  invalidateImages(paths) {
+    for (const p of paths) {
+      const u = this._imgCache.get(p);
+      if (u) { URL.revokeObjectURL(u); this._imgCache.delete(p); }
+      idbDelete(p);
+    }
+  },
+
   /* ---- 写文件：新建（无 sha） / 更新（带 sha） ---- */
   async writeFile(path, contentBase64, sha, message) {
     const body = { message: message || `✎ ${path}`, content: contentBase64 };
@@ -167,6 +176,15 @@ function idbSet(key, blob) {
   }));
 }
 
+function idbDelete(key) {
+  return _idbOpen().then(db => new Promise((resolve, reject) => {
+    const tx = db.transaction(_IDB_STORE, 'readwrite');
+    tx.objectStore(_IDB_STORE).delete(key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  })).catch(() => {});
+}
+
 function idbClear() {
   if (!_idbPromise) return Promise.resolve();
   return _idbPromise.then(db => new Promise(resolve => {
@@ -187,7 +205,7 @@ function buildEntry(file, text) {
     meta,
     body,
     type: meta.type || 'note',
-    tags: meta.tags || [],
+    tags: Array.isArray(meta.tags) ? meta.tags : [],
     source: meta.source || '',
     time: fmtStamp(file.path),
   };
