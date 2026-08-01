@@ -140,9 +140,8 @@ function render() {
   if (!list.length) {
     timeline.innerHTML = '';
     empty.classList.remove('hidden');
-    empty.style.display = '';
   } else {
-    empty.style.display = 'none';
+    empty.classList.add('hidden');
     // 按天分组
     const days = new Map();
     for (const e of list) {
