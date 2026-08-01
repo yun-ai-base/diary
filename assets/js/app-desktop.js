@@ -526,14 +526,15 @@ function bindEvents() {
       else if (menuItem.dataset.act === 'delete') deleteEntry(entry);
       return;
     }
-    // 文字笔记展开/收起
-    const toggle = e.target.closest('.entry-toggle');
-    if (toggle) {
-      const body = toggle.closest('.entry-body');
-      const expanding = toggle.dataset.toggle === 'expand';
-      body.classList.toggle('entry-body-collapsed', !expanding);
-      toggle.textContent = expanding ? '收起' : '展开';
-      toggle.dataset.toggle = expanding ? 'collapse' : 'expand';
+    // 文字笔记展开/收起：点击卡片任意位置切换（菜单/标签/图片除外）
+    const cardEl = e.target.closest('.entry-card');
+    const bodyEl = cardEl ? cardEl.querySelector('.entry-body') : null;
+    const isInteractEl = e.target.closest('.entry-menu') || e.target.closest('.tag') || e.target.closest('.md-img');
+    if (cardEl && bodyEl && !isInteractEl && bodyEl.querySelector('.entry-toggle')) {
+      const expanding = bodyEl.classList.contains('entry-body-collapsed');
+      bodyEl.classList.toggle('entry-body-collapsed', !expanding);
+      const tg = bodyEl.querySelector('.entry-toggle');
+      if (tg) { tg.textContent = expanding ? '收起' : '展开'; tg.dataset.toggle = expanding ? 'collapse' : 'expand'; }
       return;
     }
     const tag = e.target.closest('.tag');
