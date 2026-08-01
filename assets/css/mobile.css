@@ -351,6 +351,30 @@ code { font-family: Consolas, monospace; font-size: 0.88em; background: rgba(255
 .md-code { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; font-size: 13px; overflow-x: auto; margin: 10px 0; }
 .md-img { width: 100%; border-radius: 14px; margin: 9px 0; box-shadow: 0 10px 30px -12px rgba(0,0,0,0.6); display: block; cursor: zoom-in; }
 .md-img-rel { display: block; margin: 9px 0; min-height: 30px; }
+/* 多图网格排版：2 张并排，≥3 张首图跨全宽 + 其余 2 列缩略图 */
+.img-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin: 10px 0;
+}
+.img-grid .md-img,
+.img-grid .md-img-rel {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  margin: 0;
+  border-radius: 12px;
+  display: block;
+  box-shadow: none;
+}
+.img-grid .md-img-rel { background: rgba(255,255,255,0.05); }
+.img-grid-many .md-img:first-child,
+.img-grid-many .md-img-rel:first-child {
+  grid-column: 1 / -1;
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+}
 
 .entry-source { margin-top: 11px; padding-top: 11px; border-top: 1px dashed rgba(255,255,255,0.14); color: var(--ink-dim); font-size: 13px; font-style: italic; }
 .entry-source::before { content: "—— "; color: var(--ink-faint); }

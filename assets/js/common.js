@@ -53,7 +53,19 @@ function renderMarkdown(src, mdPath = '') {
   let html = escapeHtml(src);
   // 代码块
   html = html.replace(/```([\s\S]*?)```/g, (_, c) => `<pre class="md-code">${c.trim()}</pre>`);
-  // 图片（不转义相对路径中的引号在第一步已处理，这里恢复相对引用写法）
+  // 图片网格：连续图片块（≥2 张，可夹空行）打包成网格容器，避免多张全宽大图堆叠
+  html = html.replace(/(^|\n)([ \t]*(?:\n[ \t]*)?!\[[^\]]*\]\([^)]+\)[ \t]*(?:\n[ \t]*(?:\n[ \t]*)?!\[[^\]]*\]\([^)]+\)[ \t]*)+)/g, (m, lead, block) => {
+    const lines = block.trim().split('\n').filter(l => l.trim());
+    const imgs = lines.map(l => {
+      const mm = /!\[([^\]]*)\]\(([^)]+)\)/.exec(l);
+      const alt = mm[1], url = mm[2];
+      if (/^(https?:|data:)/.test(url)) return `<img src="${url}" alt="${alt}" class="md-img" loading="lazy">`;
+      return `<span class="md-img-rel" data-src="${url}" data-alt="${alt}" data-md-path="${escapeHtml(mdPath)}"></span>`;
+    }).join('');
+    // ≥3 张时首图跨全宽（img-grid-many），2 张时两列并排
+    return lead + `<div class="img-grid${lines.length >= 3 ? ' img-grid-many' : ''}">${imgs}</div>\n`;
+  });
+  // 单张图片
   html = html.replace(/!\[([^\]]*)\]\(([^)]+)\)/g, (m, alt, url) => {
     if (/^(https?:|data:)/.test(url)) return `<img src="${url}" alt="${alt}" class="md-img" loading="lazy">`;
     return `<span class="md-img-rel" data-src="${url}" data-alt="${alt}" data-md-path="${escapeHtml(mdPath)}"></span>`;
