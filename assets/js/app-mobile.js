@@ -466,6 +466,22 @@ function moveLightbox(dir) {
   updateLightbox();
 }
 
+/* ---------------- 图片墙（全屏网格浏览全部图片） ---------------- */
+function openWall() {
+  const grid = $('#wallGrid');
+  const seq = state.imageSequence;
+  $('#wallCount').textContent = seq.length + ' 张';
+  if (!seq.length) {
+    grid.innerHTML = '<div class="empty-wall">还没有图片</div>';
+  } else {
+    grid.innerHTML = seq.map(it =>
+      `<span class="md-img-rel wall-cell" data-src="${escapeHtml(it.abs)}" data-alt="图" data-md-path=""></span>`).join('');
+    lazyLoadImages(grid);
+  }
+  $('#imageWall').classList.remove('hidden');
+}
+function closeWall() { $('#imageWall').classList.add('hidden'); }
+
 /* ---------------- 设置 ---------------- */
 function updateStatsUI() {
   $('#mStatCount').textContent = state.entries.length;
@@ -650,6 +666,17 @@ function bindEvents() {
     if (img) { openLightbox(img); }
   });
 
+  // 图片墙
+  $('#wallBtn').addEventListener('click', openWall);
+  $('#wallClose').addEventListener('click', closeWall);
+  $('#imageWall').addEventListener('click', e => {
+    if (e.target === $('#imageWall')) closeWall();
+  });
+  $('#wallGrid').addEventListener('click', e => {
+    const img = e.target.closest('.md-img');
+    if (img) openLightbox(img);
+  });
+
   // 设置
   $('#settingsBtn').addEventListener('click', openSettings);
   $('#settingsClose').addEventListener('click', closeSettings);
@@ -688,7 +715,7 @@ function bindEvents() {
     lbEl.classList.add('hidden');
   });
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') { $('#lightbox').classList.add('hidden'); closeEditor(); closeSettings(); }
+    if (e.key === 'Escape') { $('#lightbox').classList.add('hidden'); closeEditor(); closeSettings(); closeWall(); }
     if (e.key === 'ArrowLeft') moveLightbox(-1);
     else if (e.key === 'ArrowRight') moveLightbox(1);
   });

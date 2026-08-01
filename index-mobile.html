@@ -52,6 +52,7 @@
       <div class="logo-mark">✦</div>
       <div class="logo-text">剪影</div>
       <select id="monthSelect" class="month-select"><option value="">全部</option></select>
+      <button class="icon-btn" id="wallBtn" title="图片墙">▦</button>
       <button class="icon-btn" id="settingsBtn" title="设置">⚙</button>
     </div>
     <nav class="type-tabs glass" id="typeTabs">
@@ -151,6 +152,16 @@
   <button class="lightbox-next" id="lightboxNext" title="下一张">›</button>
   <div class="lightbox-count" id="lightboxCount"></div>
   <button class="lightbox-close" id="lightboxClose">✕</button>
+</div>
+
+<!-- ============ 图片墙（全屏覆盖） ============ -->
+<div id="imageWall" class="wall hidden">
+  <div class="wall-head">
+    <span class="wall-title">▦ 图片墙</span>
+    <span class="wall-count" id="wallCount"></span>
+    <button class="icon-btn" id="wallClose" title="关闭">✕</button>
+  </div>
+  <div class="wall-grid" id="wallGrid"></div>
 </div>
 
 <div id="toast" class="toast"></div>

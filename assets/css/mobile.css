@@ -644,6 +644,49 @@ code { font-family: Consolas, monospace; font-size: 0.88em; background: rgba(255
   background: rgba(0,0,0,0.35); padding: 4px 12px; border-radius: 999px;
 }
 
+/* ============ 图片墙 ============ */
+.wall {
+  position: fixed; inset: 0; z-index: 150;
+  background: rgba(5, 8, 20, 0.97);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  overflow-y: auto;
+  animation: fade-in 0.25s ease-out both;
+  padding-bottom: calc(30px + var(--safe-b));
+}
+.wall.hidden { display: none; }
+.wall-head {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; align-items: center; gap: 10px;
+  padding: max(14px, env(safe-area-inset-top)) 16px 14px;
+  background: rgba(5, 8, 20, 0.88);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+.wall-title { font-family: var(--serif); font-size: 18px; letter-spacing: 2px; flex: 1; }
+.wall-count { color: var(--ink-dim); font-size: 12px; }
+.wall-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 14px 14px 30px;
+}
+.wall-cell {
+  display: block;
+  aspect-ratio: 1 / 1;
+  border-radius: 10px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.05);
+  cursor: zoom-in;
+  margin: 0;               /* 覆盖 .md-img-rel 默认外边距 */
+  min-height: 0;           /* 覆盖 .md-img-rel 默认占位高度 */
+  animation: card-in 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.wall-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wall-cell:active { opacity: 0.85; }
+.empty-wall { grid-column: 1 / -1; text-align: center; color: var(--ink-faint); padding: 80px 0; font-size: 14px; }
+
 /* ============ Toast ============ */
 .toast {
   position: fixed; left: 50%; bottom: calc(92px + var(--safe-b)); z-index: 300;

@@ -770,6 +770,48 @@ code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.9em; bac
   background: rgba(0,0,0,0.35); padding: 4px 14px; border-radius: 999px;
 }
 
+/* ============ 图片墙 ============ */
+.wall {
+  position: fixed; inset: 0; z-index: 150;
+  background: rgba(5, 8, 20, 0.97);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  overflow-y: auto;
+  animation: fade-in 0.25s ease-out both;
+}
+.wall.hidden { display: none; }
+.wall-head {
+  position: sticky; top: 0; z-index: 2;
+  display: flex; align-items: center; gap: 12px;
+  padding: 20px 28px;
+  background: rgba(5, 8, 20, 0.85);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid var(--border);
+}
+.wall-title { font-family: var(--serif); font-size: 19px; letter-spacing: 2px; flex: 1; }
+.wall-count { color: var(--ink-dim); font-size: 13px; }
+.wall-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 12px;
+  padding: 24px 28px 60px;
+}
+.wall-cell {
+  display: block;
+  aspect-ratio: 1 / 1;
+  border-radius: 14px;
+  overflow: hidden;
+  background: rgba(255,255,255,0.05);
+  cursor: zoom-in;
+  margin: 0;               /* 覆盖 .md-img-rel 默认外边距 */
+  min-height: 0;           /* 覆盖 .md-img-rel 默认占位高度 */
+  animation: card-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.wall-cell img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.wall-cell img:hover { opacity: 0.92; }
+.empty-wall { grid-column: 1 / -1; text-align: center; color: var(--ink-faint); padding: 80px 0; font-size: 15px; }
+
 /* ============ Toast ============ */
 .toast {
   position: fixed; left: 50%; bottom: 40px; z-index: 300;

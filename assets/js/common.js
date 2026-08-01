@@ -288,7 +288,9 @@ async function loadLazyImage(ph, onImage) {
   const rel = ph.dataset.src;
   const alt = ph.dataset.alt || '图';
   try {
-    const abs = DiaryAPI.resolveImagePath(ph.dataset.mdPath, rel);
+    const abs = ph.dataset.mdPath
+      ? DiaryAPI.resolveImagePath(ph.dataset.mdPath, rel)   // 时间线：相对路径解析
+      : rel;                                                // 图墙：data-src 已是绝对路径
     const url = await DiaryAPI.getImageURL(abs);
     const img = document.createElement('img');
     img.className = 'md-img';

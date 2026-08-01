@@ -64,6 +64,7 @@
         <div id="searchSuggest" class="search-suggest hidden"></div>
       </div>
       <select id="monthSelect" class="month-select" title="按月份跳转"></select>
+      <button id="wallBtn" class="icon-btn" title="图片墙">▦</button>
       <button id="settingsBtn" class="icon-btn" title="设置">⚙</button>
     </div>
   </header>
@@ -143,6 +144,16 @@
   <button class="lightbox-next" id="lightboxNext" title="下一张">›</button>
   <div class="lightbox-count" id="lightboxCount"></div>
   <button class="lightbox-close" id="lightboxClose">✕</button>
+</div>
+
+<!-- ============ 图片墙（全屏覆盖） ============ -->
+<div id="imageWall" class="wall hidden">
+  <div class="wall-head">
+    <span class="wall-title">▦ 图片墙</span>
+    <span class="wall-count" id="wallCount"></span>
+    <button class="icon-btn" id="wallClose" title="关闭">✕</button>
+  </div>
+  <div class="wall-grid" id="wallGrid"></div>
 </div>
 
 <div id="toast" class="toast"></div>
