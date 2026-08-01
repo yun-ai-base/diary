@@ -273,6 +273,33 @@ code { font-family: Consolas, monospace; font-size: 0.88em; background: rgba(255
 .entry-body blockquote { border-left: 3px solid var(--accent); padding: 3px 14px; margin: 10px 0; color: var(--ink-dim); font-style: italic; background: rgba(255,255,255,0.03); border-radius: 0 8px 8px 0; }
 .entry-body ul, .entry-body ol { padding-left: 22px; margin: 7px 0; }
 .entry-body li { margin-bottom: 3px; }
+/* 文字笔记折叠：限高 + 渐变遮罩 + 展开按钮（与桌面版一致） */
+.entry-body-collapsed {
+  position: relative;
+  max-height: 8.2em;            /* 约 4 行 */
+  overflow: hidden;
+}
+.entry-body-collapsed::after {
+  content: "";
+  position: absolute; left: 0; right: 0; bottom: 0; height: 3em;
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.12));
+  pointer-events: none;
+}
+.entry-toggle {
+  display: block;
+  margin-top: 8px;
+  background: rgba(165, 180, 252, 0.12);
+  border: 1px solid rgba(165, 180, 252, 0.28);
+  color: var(--accent);
+  font-size: 12.5px; cursor: pointer;
+  padding: 5px 0;
+  font-weight: 600;
+  border-radius: 999px;
+  width: 100%;
+  text-align: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.entry-toggle:active { background: rgba(165, 180, 252, 0.2); }
 .md-code-inline { background: rgba(255,255,255,0.13); padding: 1px 6px; border-radius: 5px; font-size: 0.88em; }
 .md-code { background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; font-size: 13px; overflow-x: auto; margin: 10px 0; }
 .md-img { width: 100%; border-radius: 14px; margin: 9px 0; box-shadow: 0 10px 30px -12px rgba(0,0,0,0.6); display: block; cursor: zoom-in; }
@@ -488,6 +515,23 @@ code { font-family: Consolas, monospace; font-size: 0.88em; background: rgba(255
   border: 1px solid var(--border);
   color: #fff; border-radius: 50%;
   font-size: 16px;
+}
+.lightbox-prev, .lightbox-next {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 44px; height: 44px;
+  display: grid; place-items: center;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid var(--border);
+  color: #fff; border-radius: 50%;
+  font-size: 26px; line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+}
+.lightbox-prev { left: 10px; }
+.lightbox-next { right: 10px; }
+.lightbox-count {
+  position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+  color: rgba(255,255,255,0.8); font-size: 13px; letter-spacing: 0.5px;
+  background: rgba(0,0,0,0.35); padding: 4px 12px; border-radius: 999px;
 }
 
 /* ============ Toast ============ */

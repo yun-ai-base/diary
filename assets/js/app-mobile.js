@@ -137,6 +137,7 @@ function render() {
       ${cards.join('')}
     </div>`;
   }).join('');
+  autoUncollapseShortNotes($('#timeline'));
   lazyLoadImages($('#timeline'));
 }
 
@@ -144,6 +145,17 @@ function formatDayLabel(dk) {
   const [y, m, d] = dk.split('-').map(Number);
   const wd = ['日', '一', '二', '三', '四', '五', '六'][new Date(y, m - 1, d).getDay()];
   return `${y}年${m}月${d}日 · 周${wd}`;
+}
+
+/* 折叠卡片渲染后：内容未超出折叠高度（短笔记）则去掉折叠态和按钮 */
+function autoUncollapseShortNotes(container) {
+  container.querySelectorAll('.entry-body-collapsed').forEach(body => {
+    if (body.scrollHeight <= body.clientHeight + 1) {
+      body.classList.remove('entry-body-collapsed');
+      const btn = body.nextElementSibling;
+      if (btn && btn.classList.contains('entry-toggle')) btn.remove();
+    }
+  });
 }
 
 function renderCard(entry, delay) {
@@ -155,13 +167,19 @@ function renderCard(entry, delay) {
   ).join('');
   const source = entry.type === 'quote' && entry.source
     ? `<div class="entry-source">${escapeHtml(entry.source)}</div>` : '';
+  // 纯文字笔记：默认折叠显示约 4 行，点击展开/收起；带图笔记保持完整
+  const hasImg = /!\[[^\]]*\]\([^)]+\)/.test(entry.body || '');
+  const bodyHtml = renderMarkdown(entry.body || '', entry.path);
+  const bodyHtmlFinal = hasImg
+    ? `<div class="entry-body">${bodyHtml}</div>`
+    : `<div class="entry-body entry-body-collapsed">${bodyHtml}</div><button class="entry-toggle" data-toggle="expand">展开</button>`;
   return `<article class="entry-card" data-id="${escapeHtml(entry.name)}" data-month="${monthKeyOf(entry.name)}" style="animation-delay:${Math.min(delay, 420)}ms">
     <div class="entry-head">
       <span class="entry-type" style="color:${t.color}"><i>${t.icon}</i>${t.label}</span>
       <span class="entry-time">${timeStr}</span>
       <button class="entry-menu-btn" title="操作">⋯</button>
     </div>
-    <div class="entry-body">${renderMarkdown(entry.body || '', entry.path)}</div>
+    ${bodyHtmlFinal}
     ${source}
     ${tags ? `<div class="entry-tags">${tags}</div>` : ''}
   </article>`;
@@ -331,6 +349,43 @@ function showActions(entry) {
   overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
 }
 
+/* ---------------- 图片灯箱（多图左右滑动） ---------------- */
+let lightboxImages = [];
+let lightboxIndex = 0;
+
+function openLightbox(img) {
+  const card = img.closest('.entry-card');
+  // 收集当前卡片已加载的图片，定位当前点击的那张
+  lightboxImages = [...card.querySelectorAll('.md-img')].map(i => i.src);
+  lightboxIndex = Math.max(0, lightboxImages.indexOf(img.src));
+  // 后台补加载同卡片里尚未进入视口的图（懒加载占位），并入灯箱列表
+  card.querySelectorAll('.md-img-rel').forEach(ph => {
+    loadLazyImage(ph, newImg => {
+      if ($('#lightbox').classList.contains('hidden')) return;
+      lightboxImages.push(newImg.src);
+      updateLightbox();
+    });
+  });
+  updateLightbox();
+  $('#lightbox').classList.remove('hidden');
+}
+
+function updateLightbox() {
+  const n = lightboxImages.length;
+  const idx = Math.min(lightboxIndex, n - 1);
+  $('#lightboxImg').src = n ? lightboxImages[idx] : '';
+  $('#lightboxCount').textContent = n > 1 ? `${idx + 1} / ${n}` : '';
+  $('#lightboxPrev').style.display = n > 1 ? '' : 'none';
+  $('#lightboxNext').style.display = n > 1 ? '' : 'none';
+}
+
+function moveLightbox(dir) {
+  const n = lightboxImages.length;
+  if (n < 2) return;
+  lightboxIndex = (lightboxIndex + dir + n) % n;   // 首尾循环
+  updateLightbox();
+}
+
 /* ---------------- 设置 ---------------- */
 function openSettings() {
   $('#settingsToken').value = DiaryAPI.getToken();
@@ -448,6 +503,17 @@ function bindEvents() {
       if (entry) showActions(entry);
       return;
     }
+    // 纯文字卡片：点击任意位置展开/收起（排除菜单/标签/图片）
+    const cardEl = e.target.closest('.entry-card');
+    const bodyEl = cardEl ? cardEl.querySelector('.entry-body') : null;
+    const isInteractEl = e.target.closest('.entry-menu-btn') || e.target.closest('.tag') || e.target.closest('.md-img');
+    if (cardEl && bodyEl && !isInteractEl && cardEl.querySelector('.entry-toggle')) {
+      const expanding = bodyEl.classList.contains('entry-body-collapsed');
+      bodyEl.classList.toggle('entry-body-collapsed', !expanding);
+      const tg = bodyEl.querySelector('.entry-toggle');
+      if (tg) { tg.textContent = expanding ? '收起' : '展开'; tg.dataset.toggle = expanding ? 'collapse' : 'expand'; }
+      return;
+    }
     const tag = e.target.closest('.tag');
     if (tag) {
       state.filterTag = (state.filterTag === tag.dataset.tag) ? '' : tag.dataset.tag;
@@ -455,10 +521,7 @@ function bindEvents() {
       return;
     }
     const img = e.target.closest('.md-img');
-    if (img) {
-      $('#lightboxImg').src = img.src;
-      $('#lightbox').classList.remove('hidden');
-    }
+    if (img) { openLightbox(img); }
   });
 
   // 设置
@@ -470,11 +533,34 @@ function bindEvents() {
     location.href = location.href.replace(/index-mobile\.html$/, 'index.html');
   });
 
-  // 灯箱
+  // 灯箱（多图左右滑动）
   $('#lightboxClose').addEventListener('click', () => $('#lightbox').classList.add('hidden'));
-  $('#lightbox').addEventListener('click', e => { if (e.target === $('#lightbox')) $('#lightbox').classList.add('hidden'); });
+  $('#lightboxPrev').addEventListener('click', e => { e.stopPropagation(); moveLightbox(-1); });
+  $('#lightboxNext').addEventListener('click', e => { e.stopPropagation(); moveLightbox(1); });
+  const lbEl = $('#lightbox');
+  let lbTouchX = 0, lbTouchY = 0, lbSwiped = false;
+  lbEl.addEventListener('touchstart', e => {
+    lbTouchX = e.touches[0].clientX;
+    lbTouchY = e.touches[0].clientY;
+    lbSwiped = false;
+  }, { passive: true });
+  lbEl.addEventListener('touchend', e => {
+    const dx = e.changedTouches[0].clientX - lbTouchX;
+    const dy = e.changedTouches[0].clientY - lbTouchY;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      lbSwiped = true;
+      moveLightbox(dx < 0 ? 1 : -1);
+    }
+  }, { passive: true });
+  lbEl.addEventListener('click', e => {
+    if (e.target !== lbEl) return;
+    if (lbSwiped) { lbSwiped = false; return; }   // 刚滑完这一下不算关闭
+    lbEl.classList.add('hidden');
+  });
   document.addEventListener('keydown', e => {
     if (e.key === 'Escape') { $('#lightbox').classList.add('hidden'); closeEditor(); closeSettings(); }
+    if (e.key === 'ArrowLeft') moveLightbox(-1);
+    else if (e.key === 'ArrowRight') moveLightbox(1);
   });
 }
 

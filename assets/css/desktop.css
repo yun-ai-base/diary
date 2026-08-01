@@ -362,16 +362,20 @@ code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.9em; bac
   pointer-events: none;
 }
 .entry-toggle {
-  position: relative;
-  display: inline-block;
-  margin-top: 4px;
-  background: none; border: none;
+  display: block;
+  margin-top: 8px;
+  background: rgba(165, 180, 252, 0.12);
+  border: 1px solid rgba(165, 180, 252, 0.28);
   color: var(--accent);
-  font-size: 13px; cursor: pointer;
-  padding: 0 4px;
+  font-size: 12.5px; cursor: pointer;
+  padding: 5px 0;
   font-weight: 600;
+  border-radius: 999px;
+  width: 100%;
+  text-align: center;
+  transition: all 0.2s;
 }
-.entry-toggle:hover { text-decoration: underline; }
+.entry-toggle:hover { background: rgba(165, 180, 252, 0.2); }
 .entry-body p { margin-bottom: 10px; }
 .entry-body p:last-child { margin-bottom: 0; }
 .entry-body h1, .entry-body h2, .entry-body h3, .entry-body h4, .entry-body h5, .entry-body h6 {
@@ -639,6 +643,24 @@ code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.9em; bac
   transition: all 0.25s;
 }
 .lightbox-close:hover { background: rgba(244,63,94,0.4); transform: rotate(90deg); }
+.lightbox-prev, .lightbox-next {
+  position: absolute; top: 50%; transform: translateY(-50%);
+  width: 46px; height: 46px;
+  display: grid; place-items: center;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid var(--border);
+  color: #fff; border-radius: 50%;
+  font-size: 28px; line-height: 1; cursor: pointer;
+  transition: all 0.25s;
+}
+.lightbox-prev { left: 28px; }
+.lightbox-next { right: 28px; }
+.lightbox-prev:hover, .lightbox-next:hover { background: rgba(255,255,255,0.22); }
+.lightbox-count {
+  position: absolute; bottom: 28px; left: 50%; transform: translateX(-50%);
+  color: rgba(255,255,255,0.8); font-size: 14px; letter-spacing: 0.5px;
+  background: rgba(0,0,0,0.35); padding: 4px 14px; border-radius: 999px;
+}
 
 /* ============ Toast ============ */
 .toast {

@@ -143,6 +143,7 @@ function render() {
     timeline.innerHTML = list.map((e, i) => renderCard(e, i * 50)).join('');
   }
   updateStats();
+  autoUncollapseShortNotes($('#timeline'));
   lazyLoadImages($('#timeline'));
 }
 
@@ -161,7 +162,7 @@ function renderCard(entry, delay) {
   const hasImg = /!\[[^\]]*\]\([^)]+\)/.test(entry.body || '');
   const bodyHtmlFinal = hasImg
     ? `<div class="entry-body">${bodyHtml}</div>`
-    : `<div class="entry-body entry-body-collapsed">${bodyHtml}<button class="entry-toggle" data-toggle="expand">展开</button></div>`;
+    : `<div class="entry-body entry-body-collapsed">${bodyHtml}</div><button class="entry-toggle" data-toggle="expand">展开</button>`;
 
   return `<article class="entry-card" data-id="${escapeHtml(entry.name)}" data-month="${monthKeyOf(entry.name)}" style="animation-delay:${Math.min(delay, 500)}ms">
     <div class="entry-head">
@@ -179,6 +180,17 @@ function renderCard(entry, delay) {
     ${source}
     ${tags ? `<div class="entry-tags">${tags}</div>` : ''}
   </article>`;
+}
+
+/* 折叠卡片渲染后：内容未超出折叠高度（短笔记）则去掉折叠态和按钮 */
+function autoUncollapseShortNotes(container) {
+  container.querySelectorAll('.entry-body-collapsed').forEach(body => {
+    if (body.scrollHeight <= body.clientHeight + 1) {
+      body.classList.remove('entry-body-collapsed');
+      const btn = body.nextElementSibling;
+      if (btn && btn.classList.contains('entry-toggle')) btn.remove();
+    }
+  });
 }
 
 function updateStats() {
@@ -366,6 +378,42 @@ async function deleteEntry(entry) {
   } catch (err) { toast('删除失败：' + err.message); }
 }
 
+/* ---------------- 图片灯箱（多图左右切换） ---------------- */
+let lightboxImages = [];
+let lightboxIndex = 0;
+
+function openLightbox(img) {
+  const card = img.closest('.entry-card');
+  lightboxImages = [...card.querySelectorAll('.md-img')].map(i => i.src);
+  lightboxIndex = Math.max(0, lightboxImages.indexOf(img.src));
+  // 后台补加载同卡片里尚未进入视口的图（懒加载占位），并入灯箱列表
+  card.querySelectorAll('.md-img-rel').forEach(ph => {
+    loadLazyImage(ph, newImg => {
+      if ($('#lightbox').classList.contains('hidden')) return;
+      lightboxImages.push(newImg.src);
+      updateLightbox();
+    });
+  });
+  updateLightbox();
+  $('#lightbox').classList.remove('hidden');
+}
+
+function updateLightbox() {
+  const n = lightboxImages.length;
+  const idx = Math.min(lightboxIndex, n - 1);
+  $('#lightboxImg').src = n ? lightboxImages[idx] : '';
+  $('#lightboxCount').textContent = n > 1 ? `${idx + 1} / ${n}` : '';
+  $('#lightboxPrev').style.display = n > 1 ? '' : 'none';
+  $('#lightboxNext').style.display = n > 1 ? '' : 'none';
+}
+
+function moveLightbox(dir) {
+  const n = lightboxImages.length;
+  if (n < 2) return;
+  lightboxIndex = (lightboxIndex + dir + n) % n;   // 首尾循环
+  updateLightbox();
+}
+
 /* ---------------- 设置 ---------------- */
 function openSettings() {
   $('#settingsToken').value = DiaryAPI.getToken();
@@ -530,7 +578,7 @@ function bindEvents() {
     const cardEl = e.target.closest('.entry-card');
     const bodyEl = cardEl ? cardEl.querySelector('.entry-body') : null;
     const isInteractEl = e.target.closest('.entry-menu') || e.target.closest('.tag') || e.target.closest('.md-img');
-    if (cardEl && bodyEl && !isInteractEl && bodyEl.querySelector('.entry-toggle')) {
+    if (cardEl && bodyEl && !isInteractEl && cardEl.querySelector('.entry-toggle')) {
       const expanding = bodyEl.classList.contains('entry-body-collapsed');
       bodyEl.classList.toggle('entry-body-collapsed', !expanding);
       const tg = bodyEl.querySelector('.entry-toggle');
@@ -546,11 +594,7 @@ function bindEvents() {
       return;
     }
     const img = e.target.closest('.md-img');
-    if (img) {
-      $('#lightboxImg').src = img.src;
-      $('#lightbox').classList.remove('hidden');
-      return;
-    }
+    if (img) { openLightbox(img); return; }
   });
 
   document.addEventListener('click', e => {
@@ -566,8 +610,10 @@ function bindEvents() {
     card.style.setProperty('--my', (e.clientY - r.top) + 'px');
   });
 
-  // 灯箱
+  // 灯箱（多图左右切换）
   $('#lightboxClose').addEventListener('click', () => $('#lightbox').classList.add('hidden'));
+  $('#lightboxPrev').addEventListener('click', e => { e.stopPropagation(); moveLightbox(-1); });
+  $('#lightboxNext').addEventListener('click', e => { e.stopPropagation(); moveLightbox(1); });
   $('#lightbox').addEventListener('click', e => {
     if (e.target === $('#lightbox')) $('#lightbox').classList.add('hidden');
   });
@@ -577,6 +623,8 @@ function bindEvents() {
       closeEditor();
       closeSettings();
     }
+    if (e.key === 'ArrowLeft') moveLightbox(-1);
+    else if (e.key === 'ArrowRight') moveLightbox(1);
   });
 
   // 设置
