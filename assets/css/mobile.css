@@ -35,6 +35,7 @@ body {
   user-select: none;
 }
 input, textarea { user-select: text; }
+.entry-body, .entry-source { user-select: text; -webkit-user-select: text; }
 .hidden { display: none !important; }
 code { font-family: Consolas, monospace; font-size: 0.88em; background: rgba(255,255,255,0.12); padding: 1px 5px; border-radius: 5px; }
 
