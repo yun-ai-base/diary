@@ -15,6 +15,7 @@ const state = {
   currentType: 'note',
   tags: new Set(),
   newImages: [],
+  expandedIds: new Set(), // 已手动展开的文字卡片 id，render 后恢复
 };
 
 const $ = (sel, el = document) => el.querySelector(sel);
@@ -167,12 +168,13 @@ function renderCard(entry, delay) {
   ).join('');
   const source = entry.type === 'quote' && entry.source
     ? `<div class="entry-source">${escapeHtml(entry.source)}</div>` : '';
-  // 纯文字笔记：默认折叠显示约 4 行，点击展开/收起；带图笔记保持完整
+  // 纯文字笔记：默认折叠显示约 4 行，点击展开/收起，手动展开过的保持展开；带图笔记保持完整
   const hasImg = /!\[[^\]]*\]\([^)]+\)/.test(entry.body || '');
   const bodyHtml = renderMarkdown(entry.body || '', entry.path);
+  const expanded = !hasImg && state.expandedIds.has(entry.name);
   const bodyHtmlFinal = hasImg
     ? `<div class="entry-body">${bodyHtml}</div>`
-    : `<div class="entry-body entry-body-collapsed">${bodyHtml}</div><button class="entry-toggle" data-toggle="expand">展开</button>`;
+    : `<div class="entry-body${expanded ? '' : ' entry-body-collapsed'}">${bodyHtml}</div><button class="entry-toggle" data-toggle="${expanded ? 'collapse' : 'expand'}">${expanded ? '收起' : '展开'}</button>`;
   return `<article class="entry-card" data-id="${escapeHtml(entry.name)}" data-month="${monthKeyOf(entry.name)}" style="animation-delay:${Math.min(delay, 420)}ms">
     <div class="entry-head">
       <span class="entry-type" style="color:${t.color}"><i>${t.icon}</i>${t.label}</span>
@@ -512,6 +514,9 @@ function bindEvents() {
       bodyEl.classList.toggle('entry-body-collapsed', !expanding);
       const tg = bodyEl.querySelector('.entry-toggle');
       if (tg) { tg.textContent = expanding ? '收起' : '展开'; tg.dataset.toggle = expanding ? 'collapse' : 'expand'; }
+      const id = cardEl.dataset.id;
+      if (expanding) state.expandedIds.add(id);
+      else state.expandedIds.delete(id);
       return;
     }
     const tag = e.target.closest('.tag');
