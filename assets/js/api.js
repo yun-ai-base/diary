@@ -54,6 +54,8 @@ const DiaryAPI = {
   },
 
   /* ---- 读原始内容：md 文本 或 图片 blob ---- */
+  // 注意：GitHub raw 接口对图片返回的 Content-Type 是 application/vnd.github.raw
+  // 而不是 image/*，所以必须按文件扩展名判断图片类型
   async readRaw(path) {
     const enc = encodeURIComponent(path);
     const res = await fetch(`${this.BASE}/repos/${this.OWNER}/${this.REPO}/contents/${enc}`, {
@@ -61,8 +63,7 @@ const DiaryAPI = {
     });
     if (res.status === 401 || res.status === 403) throw Object.assign(new Error('Token 无效或无权限'), { status: res.status });
     if (!res.ok) throw new Error('读取失败: ' + res.status);
-    const ct = res.headers.get('content-type') || '';
-    if (/^image\//.test(ct)) {
+    if (/\.(png|jpe?g|gif|webp|bmp|svg|ico)$/i.test(path)) {
       const blob = await res.blob();
       return { kind: 'image', blob, path };
     }
@@ -73,6 +74,7 @@ const DiaryAPI = {
   async getImageURL(path) {
     if (this._imgCache.has(path)) return this._imgCache.get(path);
     const r = await this.readRaw(path);
+    if (r.kind !== 'image') throw new Error('非图片文件: ' + path);
     const url = URL.createObjectURL(r.blob);
     this._imgCache.set(path, url);
     return url;
