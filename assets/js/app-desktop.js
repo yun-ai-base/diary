@@ -483,6 +483,23 @@ function bindEvents() {
     }
   });
 
+  // 拖拽上传
+  const dropHint = $('#dropHint');
+  const editorEl = $('#editor');
+  ['dragenter', 'dragover'].forEach(ev => editorEl.addEventListener(ev, e => {
+    e.preventDefault();
+    dropHint.classList.add('dragover');
+  }));
+  ['dragleave', 'drop'].forEach(ev => editorEl.addEventListener(ev, e => {
+    e.preventDefault();
+    dropHint.classList.remove('dragover');
+  }));
+  editorEl.addEventListener('drop', e => {
+    if (e.dataTransfer?.files?.length) {
+      onFilesPicked(e.dataTransfer.files);
+    }
+  });
+
   // 时间线事件委托：菜单 / 标签 / 图片
   $('#timeline').addEventListener('click', e => {
     const menuBtn = e.target.closest('.entry-menu-btn');
