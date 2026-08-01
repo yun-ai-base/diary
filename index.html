@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#0f172a">
+<title>剪影 · 灵感收藏</title>
+<script>
+/* 移动端自动分流到移动版（桌面版 / 移动版各自独立优化，互不妥协） */
+(function(){var m=/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent)||innerWidth<768;if(m){location.replace(location.href.replace(/index\.html?$/,'index-mobile.html'));}})();
+</script>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ctext y='24' font-size='24'%3E%E2%9C%A6%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="assets/css/desktop.css">
+</head>
+<body>
+
+<!-- ============ 渐变夜空背景 + 漂浮光球 ============ -->
+<div class="bg" aria-hidden="true">
+  <div class="orb o1"></div>
+  <div class="orb o2"></div>
+  <div class="orb o3"></div>
+  <div class="starfield"></div>
+</div>
+
+<!-- ============ 登录屏 ============ -->
+<div id="loginScreen" class="screen login hidden">
+  <div class="login-card glass">
+    <div class="login-logo">✦</div>
+    <h1 class="login-title">剪影</h1>
+    <p class="login-sub">收集世界的灵感 · 只属于你</p>
+    <input id="loginToken" class="field" type="password" placeholder="粘贴你的 Access Token" autocomplete="off">
+    <button id="loginBtn" class="btn-primary btn-block">进入 · 连接数据仓库</button>
+    <button id="loginGuideBtn" class="btn-link">还没有 Token？看这里</button>
+    <div id="loginGuide" class="login-guide hidden">
+      <ol>
+        <li>打开 <b>github.com/settings/tokens</b></li>
+        <li>点 <b>Generate new token</b> → <b>Fine-grained token</b></li>
+        <li>Token name 随意，有效期自选</li>
+        <li><b>Repository access</b> 选 <b>Only select repositories</b>，勾选 <b>diary-data</b></li>
+        <li><b>Permissions</b> → Repository permissions → <b>Contents: Read and write</b></li>
+        <li>Generate 后复制令牌，粘贴到上方</li>
+      </ol>
+      <p class="tip">令牌只存在你自己浏览器里（localStorage），不会上传到任何服务器。所有数据写进你的私有仓库 <code>diary-data</code>。</p>
+    </div>
+    <p id="loginMsg" class="login-msg"></p>
+  </div>
+</div>
+
+<!-- ============ 主界面 ============ -->
+<div id="app" class="screen app hidden">
+
+  <header class="nav glass">
+    <div class="nav-logo"><span class="logo-mark">✦</span><span class="logo-text">剪影</span></div>
+    <nav class="type-tabs" id="typeTabs">
+      <button class="type-tab active" data-type="all">全部</button>
+      <button class="type-tab" data-type="note"><i>✦</i>杂思</button>
+      <button class="type-tab" data-type="quote"><i>❝</i>名句</button>
+      <button class="type-tab" data-type="idea"><i>✧</i>奇思</button>
+      <button class="type-tab" data-type="collection"><i>◉</i>美图</button>
+    </nav>
+    <div class="nav-right">
+      <input id="searchInput" class="search" type="search" placeholder="搜索…" autocomplete="off">
+      <select id="monthSelect" class="month-select" title="按月份跳转"></select>
+      <button id="settingsBtn" class="icon-btn" title="设置">⚙</button>
+    </div>
+  </header>
+
+  <main id="timeline" class="timeline">
+    <div id="emptyState" class="empty-state hidden">
+      <div class="empty-glyph">◌</div>
+      <p class="empty-title">这里还很安静</p>
+      <p class="empty-sub">点右下角「＋」，写下第一条灵感</p>
+    </div>
+  </main>
+
+  <div id="stats" class="stats glass hidden">
+    <div class="stat-item"><b id="statCount">0</b><span>条</span></div>
+    <div class="stat-item"><b id="statTag">0</b><span>标签</span></div>
+    <div class="stat-item"><b id="statImg">0</b><span>图</span></div>
+  </div>
+
+  <button id="fabBtn" class="fab" title="写一条">＋</button>
+</div>
+
+<!-- ============ 编辑器弹窗 ============ -->
+<div id="editor" class="modal hidden">
+  <div class="editor glass">
+    <div class="editor-head">
+      <span class="editor-title" id="editorTitle">新灵感</span>
+      <button class="icon-btn editor-close" id="editorClose" title="关闭">✕</button>
+    </div>
+    <div class="type-picker" id="typePicker"></div>
+    <textarea id="editorBody" class="editor-body" placeholder="写点什么…&#10;支持 markdown：# 标题、**粗体**、*斜体*、&gt; 引用、```代码```"></textarea>
+    <div class="meta-row">
+      <div class="chips" id="tagChips"></div>
+      <input id="tagInput" class="tag-input" placeholder="标签 · 回车添加" autocomplete="off">
+    </div>
+    <div class="meta-row source-row hidden" id="sourceRow">
+      <span class="meta-label">出处</span>
+      <input id="sourceInput" class="field" placeholder="作者 / 书名 / 来源（名句类）" autocomplete="off">
+    </div>
+    <div class="img-strip" id="imgStrip"></div>
+    <div class="editor-foot">
+      <button class="btn-ghost" id="imgBtn">🖼 配图</button>
+      <input type="file" id="fileInput" accept="image/*" multiple hidden>
+      <button class="btn-primary" id="saveBtn">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 设置弹窗 ============ -->
+<div id="settings" class="modal hidden">
+  <div class="dialog glass">
+    <div class="dialog-head">
+      <span class="dialog-title">设置</span>
+      <button class="icon-btn" id="settingsClose" title="关闭">✕</button>
+    </div>
+    <div class="dialog-body">
+      <label class="field-label">Access Token（存于本机浏览器）</label>
+      <input id="settingsToken" class="field" type="password" placeholder="留空则不改动" autocomplete="off">
+      <div class="dialog-actions">
+        <button class="btn-primary" id="settingsSave">保存设置</button>
+        <button class="btn-danger" id="settingsClear">清除并退出</button>
+      </div>
+      <hr class="sep">
+      <p class="dialog-sub">数据仓库：<code>yun-ai-base/diary-data</code>（私有）</p>
+      <p class="dialog-sub">移动端：<a href="index-mobile.html" id="goMobile">切换到移动版 →</a></p>
+      <p id="settingsMsg" class="login-msg"></p>
+    </div>
+  </div>
+</div>
+
+<!-- ============ 图片灯箱 ============ -->
+<div id="lightbox" class="lightbox hidden">
+  <img id="lightboxImg" alt="预览">
+  <button class="lightbox-close" id="lightboxClose">✕</button>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script src="assets/js/common.js"></script>
+<script src="assets/js/api.js"></script>
+<script src="assets/js/app-desktop.js"></script>
+</body>
+</html>
