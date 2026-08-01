@@ -533,6 +533,12 @@ code { font-family: Consolas, monospace; font-size: 0.88em; background: rgba(255
 .dialog-actions .btn-primary { flex: 1; }
 .dialog-sub { color: var(--ink-faint); font-size: 12.5px; margin-top: 14px; line-height: 1.7; }
 .dialog-sub a { color: var(--accent); }
+.stat-row { display: flex; align-items: center; gap: 6px; }
+.stat-cell { flex: 1; text-align: center; background: rgba(255,255,255,0.05); border: 1px solid var(--border); border-radius: 12px; padding: 10px 4px; }
+.stat-cell b { display: block; font-family: var(--serif); font-size: 20px; color: var(--ink); }
+.stat-cell span { font-size: 11px; color: var(--ink-faint); letter-spacing: 1px; }
+.btn-refresh { flex: 1; }
+.sep { border: none; border-top: 1px solid var(--border); margin: 16px 0 14px; }
 
 /* ---- 操作浮层（编辑/删除） ---- */
 .action-item {

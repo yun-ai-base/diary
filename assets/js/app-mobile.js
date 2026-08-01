@@ -442,9 +442,17 @@ function moveLightbox(dir) {
 }
 
 /* ---------------- 设置 ---------------- */
+function updateStatsUI() {
+  $('#mStatCount').textContent = state.entries.length;
+  $('#mStatTag').textContent = new Set(state.entries.flatMap(e => e.tags)).size;
+  const imgCount = state.entries.reduce((n, e) =>
+    n + ((e.body.match(/!\[[^\]]*\]\([^)]+\)/g) || []).length), 0);
+  $('#mStatImg').textContent = imgCount;
+}
 function openSettings() {
   $('#settingsToken').value = DiaryAPI.getToken();
   $('#settingsMsg').textContent = '';
+  updateStatsUI();
   $('#settings').classList.remove('hidden');
 }
 function closeSettings() { $('#settings').classList.add('hidden'); }
@@ -495,6 +503,23 @@ function bindEvents() {
   });
 
   $('#monthSelect').addEventListener('change', e => jumpToMonth(e.target.value));
+
+  // 下拉刷新：位于时间线顶部时下拉触发重新加载
+  let pullStart = null, pulling = false;
+  const timeline = $('#timeline');
+  timeline.addEventListener('touchstart', e => {
+    if (window.scrollY <= 0 && state.entries.length) { pullStart = e.touches[0].clientY; pulling = true; }
+  }, { passive: true });
+  timeline.addEventListener('touchmove', e => {
+    if (!pulling || !pullStart) return;
+    const dy = e.touches[0].clientY - pullStart;
+    if (dy > 60 && window.scrollY <= 0) {
+      pulling = false; pullStart = null;
+      toast('正在刷新…');
+      loadData().then(() => toast('已刷新 ✓', true)).catch(err => toast('刷新失败：' + err.message));
+    }
+  }, { passive: true });
+  timeline.addEventListener('touchend', () => { pulling = false; pullStart = null; });
 
   // 底部导航
   $('#tabHome').addEventListener('click', () => {
@@ -588,6 +613,10 @@ function bindEvents() {
   $('#settingsClose').addEventListener('click', closeSettings);
   $('#settingsSave').addEventListener('click', saveSettings);
   $('#settingsClear').addEventListener('click', clearSettings);
+  $('#refreshBtn').addEventListener('click', async () => {
+    toast('正在同步…');
+    try { await loadData(); toast('已刷新 ✓', true); } catch (err) { toast('刷新失败：' + err.message); }
+  });
   $('#goDesktop').addEventListener('click', () => {
     location.href = location.href.replace(/index-mobile\.html$/, 'index.html');
   });
