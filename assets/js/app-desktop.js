@@ -743,6 +743,13 @@ function bindEvents() {
     else if (e.key === 'ArrowRight') moveLightbox(1);
   });
 
+  // 回到顶部
+  const backTop = $('#backTop');
+  backTop.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
+  window.addEventListener('scroll', () => {
+    backTop.classList.toggle('hidden', window.scrollY < 600);
+  }, { passive: true });
+
   // 图片墙
   $('#wallBtn').addEventListener('click', openWall);
   $('#wallClose').addEventListener('click', closeWall);

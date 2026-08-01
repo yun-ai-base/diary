@@ -543,6 +543,23 @@ code { font-family: "SFMono-Regular", Consolas, monospace; font-size: 0.9em; bac
 .fab:hover { transform: scale(1.08) rotate(90deg); box-shadow: 0 20px 60px -10px rgba(139,92,246,0.9); }
 .fab:active { transform: scale(0.96); }
 
+/* 回到顶部 */
+.back-top {
+  position: fixed; right: 34px; bottom: 110px; z-index: 55;
+  width: 42px; height: 42px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: rgba(30, 27, 75, 0.72);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  color: var(--ink-dim); font-size: 17px;
+  cursor: pointer;
+  box-shadow: 0 12px 34px -12px rgba(0,0,0,0.6);
+  transition: all 0.25s;
+}
+.back-top:hover { color: var(--ink); border-color: var(--accent); transform: translateY(-2px); }
+.back-top.hidden { display: none; }
+
 /* ============ 弹窗通用 ============ */
 .modal {
   position: fixed; inset: 0; z-index: 100;
