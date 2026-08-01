@@ -16,7 +16,16 @@ const DiaryAPI = {
   /* ---- token 管理（localStorage，共用域名两版互通） ---- */
   getToken() { return localStorage.getItem('diary_token') || ''; },
   setToken(t) { localStorage.setItem('diary_token', (t || '').trim()); },
-  clearToken() { localStorage.removeItem('diary_token'); this._imgCache.clear(); },
+  clearToken() {
+    localStorage.removeItem('diary_token');
+    // 清掉 md 文本缓存（key 前缀 diary_md:）
+    for (let i = localStorage.length - 1; i >= 0; i--) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('diary_md:')) localStorage.removeItem(k);
+    }
+    this._imgCache.clear();
+    idbClear();
+  },
 
   _authHeaders(extra = {}) {
     const h = {
@@ -84,13 +93,20 @@ const DiaryAPI = {
     return r.text;
   },
 
-  /* 图片 objectURL（会话缓存，避免重复请求） */
+  /* 图片 objectURL：内存 → IndexedDB → 网络，拉取后写入两级缓存 */
   async getImageURL(path) {
     if (this._imgCache.has(path)) return this._imgCache.get(path);
+    const cached = await idbGet(path);
+    if (cached) {
+      const url = URL.createObjectURL(cached);
+      this._imgCache.set(path, url);
+      return url;
+    }
     const r = await this.readRaw(path);
     if (r.kind !== 'image') throw new Error('非图片文件: ' + path);
     const url = URL.createObjectURL(r.blob);
     this._imgCache.set(path, url);
+    idbSet(path, r.blob).catch(() => {});   // 落盘失败不阻塞
     return url;
   },
 
@@ -114,6 +130,51 @@ const DiaryAPI = {
     return (dir + '/' + rel).replace(/\/+/g, '/');
   },
 };
+
+/* ---------- IndexedDB 图片缓存（跨会话持久） ---------- */
+const _IDB_NAME = 'diary-img-cache';
+const _IDB_STORE = 'blobs';
+let _idbPromise = null;
+
+function _idbOpen() {
+  if (_idbPromise) return _idbPromise;
+  _idbPromise = new Promise((resolve, reject) => {
+    const req = indexedDB.open(_IDB_NAME, 1);
+    req.onupgradeneeded = () => {
+      if (!req.result.objectStoreNames.contains(_IDB_STORE)) req.result.createObjectStore(_IDB_STORE);
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => { _idbPromise = null; reject(req.error); };
+  });
+  return _idbPromise;
+}
+
+function idbGet(key) {
+  return _idbOpen().then(db => new Promise((resolve, reject) => {
+    const tx = db.transaction(_IDB_STORE, 'readonly');
+    const req = tx.objectStore(_IDB_STORE).get(key);
+    req.onsuccess = () => resolve(req.result || null);
+    req.onerror = () => reject(req.error);
+  })).catch(() => null);
+}
+
+function idbSet(key, blob) {
+  return _idbOpen().then(db => new Promise((resolve, reject) => {
+    const tx = db.transaction(_IDB_STORE, 'readwrite');
+    tx.objectStore(_IDB_STORE).put(blob, key);
+    tx.oncomplete = () => resolve();
+    tx.onerror = () => reject(tx.error);
+  }));
+}
+
+function idbClear() {
+  if (!_idbPromise) return Promise.resolve();
+  return _idbPromise.then(db => new Promise(resolve => {
+    const tx = db.transaction(_IDB_STORE, 'readwrite');
+    tx.objectStore(_IDB_STORE).clear();
+    tx.oncomplete = () => resolve();
+  })).catch(() => {});
+}
 
 /* ---------- 条目模型：把 md 文本 + 文件信息合成条目对象 ---------- */
 function buildEntry(file, text) {
