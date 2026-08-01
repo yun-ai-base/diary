@@ -70,6 +70,20 @@ const DiaryAPI = {
     return { kind: 'text', text: await res.text(), path };
   },
 
+  /* 带缓存读取 md 文本：sha 匹配则直接走 localStorage，省一次请求 */
+  async readMdCached(path, sha) {
+    const key = 'diary_md:' + path;
+    try {
+      const cached = JSON.parse(localStorage.getItem(key) || 'null');
+      if (cached && cached.sha === sha) return cached.text;
+    } catch { /* 缓存损坏则忽略 */ }
+    const r = await this.readRaw(path);
+    if (r.kind !== 'text') throw new Error('非文本文件: ' + path);
+    try { localStorage.setItem(key, JSON.stringify({ sha, text: r.text })); }
+    catch { /* 容量满时跳过缓存 */ }
+    return r.text;
+  },
+
   /* 图片 objectURL（会话缓存，避免重复请求） */
   async getImageURL(path) {
     if (this._imgCache.has(path)) return this._imgCache.get(path);

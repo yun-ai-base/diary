@@ -95,8 +95,8 @@ async function loadData() {
   const entries = [];
   await Promise.all(mds.map(async f => {
     try {
-      const r = await DiaryAPI.readRaw(f.path);
-      entries.push(buildEntry(f, r.text));
+      const text = await DiaryAPI.readMdCached(f.path, f.sha);
+      entries.push(buildEntry(f, text));
     } catch { /* 跳过坏文件 */ }
   }));
   entries.sort((a, b) => b.name.localeCompare(a.name));

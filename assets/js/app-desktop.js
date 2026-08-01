@@ -107,8 +107,8 @@ async function loadData() {
   const entries = [];
   await Promise.all(mds.map(async f => {
     try {
-      const r = await DiaryAPI.readRaw(f.path);
-      entries.push(buildEntry(f, r.text));
+      const text = await DiaryAPI.readMdCached(f.path, f.sha);
+      entries.push(buildEntry(f, text));
     } catch { /* 单条失败跳过 */ }
   }));
   entries.sort((a, b) => b.name.localeCompare(a.name)); // 时间倒序
