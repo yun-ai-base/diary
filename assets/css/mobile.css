@@ -453,6 +453,23 @@ code { font-family: Consolas, monospace; font-size: 0.88em; background: rgba(255
 .dialog-sub { color: var(--ink-faint); font-size: 12.5px; margin-top: 14px; line-height: 1.7; }
 .dialog-sub a { color: var(--accent); }
 
+/* ---- 操作浮层（编辑/删除） ---- */
+.action-item {
+  width: 100%;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid var(--border);
+  color: var(--ink);
+  padding: 15px;
+  font-size: 16px;
+  border-radius: 14px;
+  cursor: pointer;
+  margin-bottom: 8px;
+  transition: all 0.2s;
+}
+.action-item:active { background: rgba(255,255,255,0.13); }
+.action-item.danger { color: #fda4af; }
+.action-item.cancel { color: var(--ink-faint); }
+
 /* ============ 灯箱 ============ */
 .lightbox {
   position: fixed; inset: 0; z-index: 200;

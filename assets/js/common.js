@@ -73,12 +73,15 @@ function renderMarkdown(src) {
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
   html = html.replace(/(^|\s)\*([^*\n]+)\*(?=\s|$)/g, '$1<em>$2</em>');
   html = html.replace(/~~([^~]+)~~/g, '<del>$1</del>');
-  // 无序列表
-  html = html.replace(/^\s*[-•]\s+(.+)$/gm, '<li>$1</li>');
-  // 有序列表
-  html = html.replace(/^\s*\d+\.\s+(.+)$/gm, '<li class="ol">$1</li>');
-  html = html.replace(/(<li[^>]*>[\s\S]*?<\/li>)(?!\s*<li)/g, '<ul>$1</ul>');
-  html = html.replace(/<ul>(<li class="ol">[\s\S]*?<\/ul>)/g, '<ol>$1</ol>');
+  // 无序 / 有序列表（按连续行块打包成 ul/ol）
+  html = html.replace(/(?:^\s*[-•]\s+(.+)$\n?)+/gm, block => {
+    const items = block.trim().split('\n').map(l => `<li>${l.replace(/^\s*[-•]\s+/, '')}</li>`).join('');
+    return `<ul>${items}</ul>`;
+  });
+  html = html.replace(/(?:^\s*\d+\.\s+(.+)$\n?)+/gm, block => {
+    const items = block.trim().split('\n').map(l => `<li>${l.replace(/^\s*\d+\.\s+/, '')}</li>`).join('');
+    return `<ol>${items}</ol>`;
+  });
   // 引用
   html = html.replace(/^&gt;\s?(.+)$/gm, '<blockquote>$1</blockquote>');
   // 段落
