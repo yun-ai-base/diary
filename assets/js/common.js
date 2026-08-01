@@ -101,6 +101,113 @@ function escapeHtml(s) {
           .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
+/* ============================================================
+ * 自动排版（本地规则版，无 AI）
+ * 贴一段文字 → 自动分段 / 金句识别 / 列表识别 / 主题标签建议
+ * 返回 { formattedText, suggestedTags }
+ * ============================================================ */
+
+/* 内置主题词库（出现即作为标签建议，可自行扩充） */
+const TOPIC_LEXICON = [
+  '工作', '学习', '读书', '灵感', '创意', '生活', '美食', '旅行', '电影', '音乐',
+  '运动', '健康', '家人', '朋友', '爱情', '梦想', '烦恼', '快乐', '悲伤', '成长',
+  '哲学', '自然', '艺术', '科技', '编程', '代码', '城市', '孤独', '自由', '时间',
+];
+
+/* 把一段文字切成句子（按句末标点） */
+function splitSentences(text) {
+  const norm = text.replace(/\s*\n+\s*/g, '\n');
+  return norm.split(/(?<=[。！？!?…])\s*/).map(s => s.trim()).filter(Boolean);
+}
+
+/* 句子是否像「金句」：短 且 带引号/感叹/问号 */
+function isGoldenLine(s) {
+  if (s.length > 40) return false;
+  return /["“」』]/.test(s) || /[！？!?]$/.test(s) || s.includes('——');
+}
+
+/* 句子是否像列表项：编号开头 或 序数词开头 */
+function isListItem(s) {
+  return /^(\d+[\.、．)）]|[-•]|\d{1,2}\s)/.test(s) ||
+         /^(第一|第二|第三|第四|第五|第六|第七|第八|第九|第十|首先|其次|然后|最后|其一|其二)[，,、]?/.test(s);
+}
+
+/* 从句子内部提取多个编号项（如"第一去爬山，第二看电影，第三吃饭"）→ ["第一去爬山","第二看电影","第三吃饭"]，无则 null */
+function extractInlineList(line) {
+  const marks = '(?:第一|第二|第三|第四|第五|第六|第七|第八|第九|第十|首先|其次|然后|最后|其一|其二|\\d{1,2}[\\.、．)）])';
+  const re = new RegExp('[,，、\\s]*((' + marks + ')\\s*[^，,。！？!?]+)', 'g');
+  const found = [];
+  let m;
+  while ((m = re.exec(line))) {
+    found.push(m[1].replace(/^[,，、\s]+/, '').trim());
+  }
+  return found.length >= 2 ? found : null;
+}
+
+/* 主函数：文字 → 结构化 markdown + 标签建议 */
+function autoFormat(rawText) {
+  const input = (rawText || '').trim();
+  if (!input) return { formattedText: '', suggestedTags: [] };
+
+  const blocks = [];   // { type:'text'|'quote'|'list', text?/items? }
+  let cur = [];        // 普通句子缓冲
+  let curList = null;  // 当前列表项缓冲
+
+  const flushText = () => { if (cur.length) { blocks.push({ type: 'text', text: cur.join('') }); cur = []; } };
+  const flushList = () => { if (curList) { blocks.push({ type: 'list', items: curList }); curList = null; } };
+
+  for (const sentence of splitSentences(input)) {
+    /* 句内多个编号 → 拆成列表块 */
+    const inline = extractInlineList(sentence);
+    if (inline) {
+      flushText(); flushList();
+      blocks.push({ type: 'list', items: inline });
+      continue;
+    }
+    if (isListItem(sentence)) {
+      flushText();
+      if (!curList) curList = [];
+      curList.push(sentence.replace(/^[-•]\s*/, ''));
+      continue;
+    }
+    if (isGoldenLine(sentence)) {
+      flushText(); flushList();
+      blocks.push({ type: 'quote', text: sentence });
+      continue;
+    }
+    /* 普通句子：攒 2~3 句成一段 */
+    flushList();
+    cur.push(sentence);
+    if (cur.length >= 3) { blocks.push({ type: 'text', text: cur.join('') }); cur = []; }
+  }
+  flushText(); flushList();
+  if (!blocks.length) blocks.push({ type: 'text', text: input });
+
+  /* 渲染成 markdown */
+  const out = blocks.map(b => {
+    if (b.type === 'list') return b.items.map(i => '- ' + i).join('\n');
+    if (b.type === 'quote') return '> ' + b.text;
+    return b.text;
+  });
+  const formattedText = out.join('\n\n');
+
+  /* 主题标签：词库命中 + 高频词提权 */
+  const freq = {};
+  for (const w of TOPIC_LEXICON) {
+    if (input.includes(w)) freq[w] = (freq[w] || 0) + 1;
+  }
+  /* 额外：统计非词库词频，超过 2 次也建议 */
+  const allTokens = input.replace(/[，。！？；：、""''（）《》\s]/g, ' ').split(/\s+/).filter(Boolean);
+  const wordCount = {};
+  for (const tk of allTokens) {
+    if (tk.length >= 2) wordCount[tk] = (wordCount[tk] || 0) + 1;
+  }
+  const frequent = Object.entries(wordCount).filter(([w, n]) => n >= 2 && !TOPIC_LEXICON.includes(w)).sort((a, b) => b[1] - a[1]).slice(0, 2).map(([w]) => w);
+  const suggestedTags = [...new Set([...Object.keys(freq).slice(0, 4), ...frequent.slice(0, 2)])].slice(0, 5);
+
+  return { formattedText, suggestedTags };
+}
+
 /* ---------- 图片压缩（手机照片/大图 → 控制仓库体积） ---------- */
 function compressImage(file, maxSize = 1600, quality = 0.8) {
   return new Promise((resolve, reject) => {

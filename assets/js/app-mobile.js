@@ -436,6 +436,16 @@ function bindEvents() {
     const x = e.target.closest('.chip-x');
     if (x) { state.tags.delete(x.dataset.tag); renderTagChips(); }
   });
+  // 自动排版
+  $('#autoBtn').addEventListener('click', () => {
+    const text = $('#editorBody').value.trim();
+    if (!text) { toast('先写点内容，再自动排版'); return; }
+    const { formattedText, suggestedTags } = autoFormat(text);
+    $('#editorBody').value = formattedText;
+    suggestedTags.forEach(tg => state.tags.add(tg));
+    renderTagChips();
+    toast('已自动排版 ✨', true);
+  });
   $('#cameraBtn').addEventListener('click', () => $('#cameraInput').click());
   $('#albumBtn').addEventListener('click', () => $('#albumInput').click());
   $('#cameraInput').addEventListener('change', e => { onFilesPicked(e.target.files); e.target.value = ''; });

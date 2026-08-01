@@ -499,6 +499,17 @@ function bindEvents() {
     if (x) { state.tags.delete(x.dataset.tag); renderTagChips(); }
   });
 
+  // 自动排版
+  $('#autoBtn').addEventListener('click', () => {
+    const text = $('#editorBody').value.trim();
+    if (!text) { toast('先写点内容，再自动排版'); return; }
+    const { formattedText, suggestedTags } = autoFormat(text);
+    $('#editorBody').value = formattedText;
+    suggestedTags.forEach(tg => state.tags.add(tg));
+    renderTagChips();
+    toast('已自动排版 ✨', true);
+  });
+
   // 图片选择
   $('#imgBtn').addEventListener('click', () => $('#fileInput').click());
   $('#fileInput').addEventListener('change', e => {
