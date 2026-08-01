@@ -16,6 +16,7 @@ const state = {
   tags: new Set(),
   newImages: [],
   expandedIds: new Set(), // 已手动展开的文字卡片 id，render 后恢复
+  snapshot: null,         // 打开编辑器时的内容快照，用于未保存检测
 };
 
 const $ = (sel, el = document) => el.querySelector(sel);
@@ -202,15 +203,30 @@ function openEditor(entry) {
   renderTagChips();
   renderImgStrip();
   $('#sourceRow').classList.toggle('hidden', state.currentType !== 'quote');
+  state.snapshot = { body: $('#editorBody').value.trim(), source: $('#sourceInput').value.trim(), tags: [...state.tags], imgCount: state.newImages.length };
   $('#editor').classList.remove('hidden');
   setTimeout(() => $('#editorBody').focus(), 300);
 }
 
-function closeEditor() {
+/* 是否有未保存改动（对比打开时的快照） */
+function hasUnsavedChanges() {
+  const snap = state.snapshot;
+  if (!snap) return false;
+  if ($('#editorBody').value.trim() !== snap.body) return true;
+  if ($('#sourceInput').value.trim() !== snap.source) return true;
+  const tags = [...state.tags];
+  if (tags.length !== snap.tags.length || tags.some(t => !snap.tags.includes(t))) return true;
+  if (state.newImages.length !== snap.imgCount) return true;
+  return false;
+}
+
+function closeEditor(force = false) {
+  if (!force && hasUnsavedChanges() && !confirm('有未保存的内容，确定关闭吗？')) return;
   $('#editor').classList.add('hidden');
   state.newImages.forEach(n => URL.revokeObjectURL(n.url));
   state.newImages = [];
   state.editing = null;
+  state.snapshot = null;
 }
 
 function renderTypePicker() {
@@ -281,7 +297,7 @@ async function saveEntry() {
     }
     await DiaryAPI.writeFile(`${mdDir}/${stamp}.md`, utf8ToBase64(buildFrontmatter({ type, tags, source }, finalBody)), sha);
     if (state.editing) await cleanupOrphanImages(stamp, year, finalBody);
-    closeEditor();
+    closeEditor(true);
     toast('已保存 ✓', true);
     await loadData();
   } catch (err) {
