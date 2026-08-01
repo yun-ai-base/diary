@@ -119,7 +119,9 @@ function jumpToMonth(m) {
 }
 
 /* ---------------- 渲染 ---------------- */
+let renderVersion = 0; // 递增标记：hydrateAllImages 只处理最新一次渲染的 DOM
 function render() {
+  const myVersion = ++renderVersion;
   const { filterType, filterTag, search } = state;
   const q = search.toLowerCase().trim();
 
@@ -159,7 +161,7 @@ function render() {
     }).join('');
   }
   updateStats();
-  hydrateAllImages();
+  hydrateAllImages(myVersion);
 }
 
 function formatDayLabel(dk) {
@@ -197,26 +199,30 @@ function renderCard(entry, delay) {
   </article>`;
 }
 
-async function hydrateAllImages() {
-  const cards = $$('.entry-card');
-  await Promise.all(cards.map(async card => {
-    const entry = state.entries.find(e => e.name === card.dataset.id);
-    if (!entry) return;
-    const phs = $$('.md-img-rel', card);
-    await Promise.all(phs.map(async ph => {
-      const rel = ph.dataset.src;
-      try {
-        const abs = DiaryAPI.resolveImagePath(entry.path, rel);
-        const url = await DiaryAPI.getImageURL(abs);
-        const img = document.createElement('img');
-        img.className = 'md-img';
-        img.src = url;
-        img.alt = ph.dataset.alt || '图';
-        img.loading = 'lazy';
-        ph.replaceWith(img);
-      } catch { ph.remove(); }
+async function hydrateAllImages(version) {
+  try {
+    const cards = $$('.entry-card');
+    await Promise.all(cards.map(async card => {
+      const entry = state.entries.find(e => e.name === card.dataset.id);
+      if (!entry) return;
+      const phs = $$('.md-img-rel', card);
+      await Promise.all(phs.map(async ph => {
+        const rel = ph.dataset.src;
+        try {
+          const abs = DiaryAPI.resolveImagePath(entry.path, rel);
+          const url = await DiaryAPI.getImageURL(abs);
+          // 渲染版本已变化（用户又点了分类），不再替换旧 DOM
+          if (version !== renderVersion) return;
+          const img = document.createElement('img');
+          img.className = 'md-img';
+          img.src = url;
+          img.alt = ph.dataset.alt || '图';
+          img.loading = 'lazy';
+          ph.replaceWith(img);
+        } catch { if (version === renderVersion) ph.remove(); }
+      }));
     }));
-  }));
+  } catch { /* 图片加载失败不影响列表 */ }
 }
 
 function updateStats() {
